@@ -74,19 +74,6 @@ int verbose_device_search(char *s)
 	return -1;
 }
 
-void print_usage() {
-    fprintf(stderr,
-        "rtl_connector version %s\n\n"
-        "Usage: rtl_connector [options]\n\n"
-        "Available options:\n"
-        " -h, --help          show this message\n"
-        " -v, --version       print version and exit\n"
-        " -d, --device        device index (default: 0)\n"
-        " -p, --port          listen port (default: 4590)\n"
-        VERSION
-    );
-}
-
 int ringbuffer_size = 1024 * 1024;
 unsigned char* ringbuffer;
 int write_pos = 0;
@@ -159,6 +146,22 @@ void* client_worker(void* s) {
     }
     fprintf(stderr, "closing client socket\n");
     close(client_sock);
+}
+
+void print_usage() {
+    fprintf(stderr,
+        "rtl_connector version %s\n\n"
+        "Usage: rtl_connector [options]\n\n"
+        "Available options:\n"
+        " -h, --help          show this message\n"
+        " -v, --version       print version and exit\n"
+        " -d, --device        device index (default: 0)\n"
+        " -p, --port          listen port (default: 4590)\n"
+        " -f, --frequency     tune to specified frequency\n"
+        " -s, --samplerate    use the specified samplerate\n"
+        " -g, --gain          set the gain level (default: 30)\n"
+        VERSION
+    );
 }
 
 int main(int argc, char** argv) {
