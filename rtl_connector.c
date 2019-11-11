@@ -74,7 +74,11 @@ int verbose_device_search(char *s)
 	return -1;
 }
 
-int ringbuffer_size = 1024 * 1024;
+// this should be the default according to rtl-sdr.h
+#define RTL_BUFFER_SIZE 16 * 32 * 512
+int rtl_buffer_size = RTL_BUFFER_SIZE;
+// make the buffer a multiple of the rtl buffer size so we don't have to split writes / reads
+int ringbuffer_size = 10 * RTL_BUFFER_SIZE;
 unsigned char* ringbuffer_u8;
 float* ringbuffer_f;
 int write_pos = 0;
@@ -83,10 +87,6 @@ pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
 
 void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
-    /*
-    memcpy(&ringbuffer[write_pos], buf, len);
-    write_pos = (write_pos + len) % ringbuffer_size;
-    */
     int i;
     for (i = 0; i < len; i++) {
         ringbuffer_u8[write_pos] = buf[i];
@@ -104,7 +104,7 @@ void* iq_worker(void* arg) {
     uint32_t buf_num = 2;
     int r;
     while (run) {
-        r = rtlsdr_read_async(dev, rtlsdr_callback, NULL, buf_num, 0);
+        r = rtlsdr_read_async(dev, rtlsdr_callback, NULL, buf_num, rtl_buffer_size);
         if (r != 0) {
             fprintf(stderr, "WARNING: rtlsdr_read_async failed with r = %i\n", r);
         }
@@ -141,6 +141,43 @@ void* client_worker(void* s) {
     close(client_sock);
 }
 
+void* control_worker(void* p) {
+    int port = *(int*) p;
+    struct sockaddr_in local, remote;
+    char* addr = "127.0.0.1";
+    ssize_t read_bytes;
+
+    fprintf(stderr, "setting up control socket...\n");
+
+    memset(&local, 0, sizeof(local));
+    local.sin_family = AF_INET;
+    local.sin_port = htons(port);
+    local.sin_addr.s_addr = inet_addr(addr);
+
+    int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+    bind(listen_sock, (struct sockaddr *)&local, sizeof(local));
+
+    fprintf(stderr, "control socket started on %i\n", port);
+
+    listen(listen_sock, 1);
+    while (1) {
+        int rlen = sizeof(remote);
+        int sock = accept(listen_sock, (struct sockaddr *)&remote, &rlen);
+        fprintf(stderr, "control connection established\n");
+
+        bool run = true;
+        uint8_t buf[256];
+
+        while (run) {
+            read_bytes = read(sock, &buf, 256);
+            if (read_bytes <= 0) run = false;
+            fprintf(stderr, "read %i bytes from control socket: %s\n", read_bytes, buf);
+        }
+        fprintf(stderr, "control connection ended\n");
+    }
+}
+
 void print_usage() {
     fprintf(stderr,
         "rtl_connector version %s\n\n"
@@ -153,6 +190,7 @@ void print_usage() {
         " -f, --frequency     tune to specified frequency\n"
         " -s, --samplerate    use the specified samplerate\n"
         " -g, --gain          set the gain level (default: 30)\n"
+        " -c, --control       control socket port (default: disabled)\n",
         VERSION
     );
 }
@@ -161,6 +199,7 @@ int main(int argc, char** argv) {
     int c;
     int r;
     int port = 4950;
+    int control_port = -1;
     char* device_id = "0";
     int sock;
     struct sockaddr_in local, remote;
@@ -180,9 +219,10 @@ int main(int argc, char** argv) {
         {"frequency", required_argument, NULL, 'f'},
         {"samplerate", required_argument, NULL, 's'},
         {"gain", required_argument, NULL, 'g'},
+        {"control", required_argument, NULL, 'c'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -204,6 +244,9 @@ int main(int argc, char** argv) {
                 break;
             case 'g':
                 gain = (int)(atof(optarg) * 10); /* tenths of a dB */
+                break;
+            case 'c':
+                control_port = atoi(optarg);
                 break;
         }
     }
@@ -256,6 +299,11 @@ int main(int argc, char** argv) {
     pthread_create(&iq_worker_thread, NULL, iq_worker, NULL);
 
     fprintf(stderr, "IQ worker thread started\n");
+
+    if (control_port > 0) {
+        pthread_t control_worker_thread;
+        pthread_create(&control_worker_thread, NULL, control_worker, &control_port);
+    }
 
     memset(&local, 0, sizeof(local));
     local.sin_family = AF_INET;
