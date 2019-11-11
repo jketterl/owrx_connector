@@ -79,7 +79,7 @@ int verbose_device_search(char *s)
 int rtl_buffer_size = RTL_BUFFER_SIZE;
 // make the buffer a multiple of the rtl buffer size so we don't have to split writes / reads
 int ringbuffer_size = 10 * RTL_BUFFER_SIZE;
-unsigned char* ringbuffer_u8;
+uint8_t* ringbuffer_u8;
 float* ringbuffer_f;
 int write_pos = 0;
 
@@ -124,16 +124,30 @@ void* client_worker(void* s) {
     int client_sock = *(int*) s;
     ssize_t sent;
     int i;
+    uint8_t buf[256];
+    ssize_t read_bytes;
+    bool use_float = true;
     while (run) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
         pthread_mutex_unlock(&wait_mutex);
         while (read_pos != write_pos && run) {
             int available = ringbuffer_bytes(read_pos);
-            sent = send(client_sock, &ringbuffer_f[read_pos], available * sizeof(float), MSG_NOSIGNAL);
+            if (use_float) {
+                sent = send(client_sock, &ringbuffer_f[read_pos], available * sizeof(float), MSG_NOSIGNAL);
+            } else {
+                sent = send(client_sock, &ringbuffer_u8[read_pos], available * sizeof(uint8_t), MSG_NOSIGNAL);
+            }
             read_pos = (read_pos + available) % ringbuffer_size;
             if (sent <= 0) {
                 run = false;
+            }
+        }
+        if (run) {
+            read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT);
+            if (read_bytes > 0) {
+                fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer");
+                use_float = false;
             }
         }
     }
@@ -170,7 +184,7 @@ void* control_worker(void* p) {
         uint8_t buf[256];
 
         while (run) {
-            read_bytes = read(sock, &buf, 256);
+            read_bytes = recv(sock, &buf, 256, 0);
             if (read_bytes <= 0) {
                 run = false;
             } else {
@@ -242,7 +256,7 @@ int main(int argc, char** argv) {
     int gain = 0;
     int ppm = 0;
 
-    ringbuffer_u8 = (unsigned char*) malloc(sizeof(char) * ringbuffer_size);
+    ringbuffer_u8 = (uint8_t*) malloc(sizeof(uint8_t) * ringbuffer_size);
     ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
 
     static struct option long_options[] = {
