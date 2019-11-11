@@ -146,7 +146,7 @@ void* client_worker(void* s) {
         if (run) {
             read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT);
             if (read_bytes > 0) {
-                fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer");
+                fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
                 use_float = false;
             }
         }
