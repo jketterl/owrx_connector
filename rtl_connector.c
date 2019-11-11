@@ -75,7 +75,8 @@ int verbose_device_search(char *s)
 }
 
 int ringbuffer_size = 1024 * 1024;
-unsigned char* ringbuffer;
+unsigned char* ringbuffer_u8;
+float* ringbuffer_f;
 int write_pos = 0;
 
 pthread_cond_t wait_condition;
@@ -88,7 +89,9 @@ void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
     */
     int i;
     for (i = 0; i < len; i++) {
-        ringbuffer[write_pos++] = buf[i];
+        ringbuffer_u8[write_pos] = buf[i];
+        ringbuffer_f[write_pos] = ((float)buf[i])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
+        write_pos += 1;
         if (write_pos >= ringbuffer_size) write_pos = 0;
     }
     pthread_mutex_lock(&wait_mutex);
@@ -127,21 +130,11 @@ void* client_worker(void* s) {
         pthread_mutex_unlock(&wait_mutex);
         while (read_pos != write_pos && run) {
             int available = ringbuffer_bytes(read_pos);
-            //fprintf(stderr, "writing %i bytes to client... ", available);
-
-            float output[available];
-            for (int i = 0; i < available; i++) {
-                output[i]=((float)ringbuffer[read_pos])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
-                read_pos = (read_pos + 1) % ringbuffer_size;
-            }
-            sent = send(client_sock, output, sizeof(output), MSG_NOSIGNAL);
+            sent = send(client_sock, &ringbuffer_f[read_pos], available * sizeof(float), MSG_NOSIGNAL);
+            read_pos = (read_pos + available) % ringbuffer_size;
             if (sent <= 0) {
-                //fprintf(stderr, "send failed ");
                 run = false;
-            } else {
-                //fprintf(stderr, "sent: %i ", sent);
             }
-            //fprintf(stderr, "done\n");
         }
     }
     fprintf(stderr, "closing client socket\n");
@@ -176,7 +169,8 @@ int main(int argc, char** argv) {
     uint32_t samp_rate = 2400000;
     int gain = 0;
 
-    ringbuffer = (unsigned char*) malloc(sizeof(char) * ringbuffer_size);
+    ringbuffer_u8 = (unsigned char*) malloc(sizeof(char) * ringbuffer_size);
+    ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
 
     static struct option long_options[] = {
         {"help", no_argument, NULL, 'h'},
