@@ -171,8 +171,40 @@ void* control_worker(void* p) {
 
         while (run) {
             read_bytes = read(sock, &buf, 256);
-            if (read_bytes <= 0) run = false;
-            fprintf(stderr, "read %i bytes from control socket: %s\n", read_bytes, buf);
+            if (read_bytes <= 0) {
+                run = false;
+            } else {
+                char* message = malloc(sizeof(char) * read_bytes);
+                memcpy(message, buf, read_bytes);
+                if (message[read_bytes -1] == '\n') {
+                    message[read_bytes - 1] = '\0';
+                    char* key = strtok(message, ":");
+                    char* value = strtok(NULL, ":");
+                    int r = 0;
+                    // expected keys: "samp_rate", "center_freq", "ppm", "rf_gain"
+                    if (strcmp(key, "samp_rate") == 0) {
+                        uint32_t samp_rate = (uint32_t)strtoul(value, NULL, 10);
+                        r = rtlsdr_set_sample_rate(dev, samp_rate);
+                    } else if (strcmp(key, "center_freq") == 0) {
+                        uint32_t frequency = (uint32_t)strtoul(value, NULL, 10);
+                        r = rtlsdr_set_center_freq(dev, frequency);
+                    } else if (strcmp(key, "ppm") == 0) {
+                        int ppm = atoi(value);
+                        r = rtlsdr_set_freq_correction(dev, ppm);
+                    } else if (strcmp(key, "rf_gain") == 0) {
+                        int gain = (int)(atof(value) * 10); /* tenths of a dB */
+                        r = rtlsdr_set_tuner_gain(dev, gain);
+                    } else {
+                        fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
+                    }
+                    if (r != 0) {
+                        fprintf(stderr, "WARNING: setting %s failed: %i\n", key, r);
+                    }
+                } else {
+                    fprintf(stderr, "message could not be parsed :(\n");
+                }
+                free(message);
+            }
         }
         fprintf(stderr, "control connection ended\n");
     }
@@ -190,7 +222,8 @@ void print_usage() {
         " -f, --frequency     tune to specified frequency\n"
         " -s, --samplerate    use the specified samplerate\n"
         " -g, --gain          set the gain level (default: 30)\n"
-        " -c, --control       control socket port (default: disabled)\n",
+        " -c, --control       control socket port (default: disabled)\n"
+        " -P, --ppm           set frequency correction ppm\n",
         VERSION
     );
 }
@@ -207,6 +240,7 @@ int main(int argc, char** argv) {
     uint32_t frequency = 145000000;
     uint32_t samp_rate = 2400000;
     int gain = 0;
+    int ppm = 0;
 
     ringbuffer_u8 = (unsigned char*) malloc(sizeof(char) * ringbuffer_size);
     ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
@@ -220,9 +254,10 @@ int main(int argc, char** argv) {
         {"samplerate", required_argument, NULL, 's'},
         {"gain", required_argument, NULL, 'g'},
         {"control", required_argument, NULL, 'c'},
+        {"ppm", required_argument, NULL, 'P'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -247,6 +282,9 @@ int main(int argc, char** argv) {
                 break;
             case 'c':
                 control_port = atoi(optarg);
+                break;
+            case 'P':
+                ppm = atoi(optarg);
                 break;
         }
     }
@@ -278,13 +316,21 @@ int main(int argc, char** argv) {
     r = rtlsdr_set_tuner_gain_mode(dev, 0);
     if (r < 0) {
         fprintf(stderr, "setting gain mode failed\n");
-        return 4;
+        return 5;
     }
 
     r = rtlsdr_set_tuner_gain(dev, gain);
     if (r < 0) {
         fprintf(stderr, "setting gain failed\n");
-        return 4;
+        return 6;
+    }
+
+    if (ppm != 0) {
+        r = rtlsdr_set_freq_correction(dev, ppm);
+        if (r < 0) {
+            fprintf(stderr, "setting ppm failed\n");
+            return 7;
+        }
     }
 
     r = rtlsdr_reset_buffer(dev);
