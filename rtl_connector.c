@@ -188,12 +188,20 @@ void* control_worker(void* p) {
             if (read_bytes <= 0) {
                 run = false;
             } else {
-                char* message = malloc(sizeof(char) * read_bytes);
+                char* message = malloc(sizeof(char) * (read_bytes + 1));
+                // need to make copies since strtok() modifies the original
                 memcpy(message, buf, read_bytes);
-                if (message[read_bytes -1] == '\n') {
-                    message[read_bytes - 1] = '\0';
-                    char* key = strtok(message, ":");
-                    char* value = strtok(NULL, ":");
+                message[read_bytes] = '\0';
+
+                char* chunk_token;
+                char* chunk = strtok_r(message, "\n", &chunk_token);
+                while (chunk != NULL) {
+                    // need to make copies since strtok() modifies the original
+                    char* pair = (char *) malloc(sizeof(char) * (strlen(chunk) + 1));
+                    strcpy(pair, chunk);
+                    char* pair_token;
+                    char* key = strtok_r(pair, ":", &pair_token);
+                    char* value = strtok_r(NULL, ":", &pair_token);
                     int r = 0;
                     // expected keys: "samp_rate", "center_freq", "ppm", "rf_gain"
                     if (strcmp(key, "samp_rate") == 0) {
@@ -214,8 +222,9 @@ void* control_worker(void* p) {
                     if (r != 0) {
                         fprintf(stderr, "WARNING: setting %s failed: %i\n", key, r);
                     }
-                } else {
-                    fprintf(stderr, "message could not be parsed :(\n");
+                    free(pair);
+
+                    chunk = strtok_r(NULL, "\n", &chunk_token);
                 }
                 free(message);
             }
