@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <getopt.h>
 #include <string.h>
@@ -13,6 +14,8 @@
 #include "version.h"
 
 static rtlsdr_dev_t *dev = NULL;
+
+bool global_run = true;
 
 int verbose_device_search(char *s)
 {
@@ -103,7 +106,7 @@ void* iq_worker(void* arg) {
     bool run = true;
     uint32_t buf_num = 2;
     int r;
-    while (run) {
+    while (run && global_run) {
         r = rtlsdr_read_async(dev, rtlsdr_callback, NULL, buf_num, rtl_buffer_size);
         if (r != 0) {
             fprintf(stderr, "WARNING: rtlsdr_read_async failed with r = %i\n", r);
@@ -129,11 +132,11 @@ void* client_worker(void* s) {
     bool use_float = true;
 
     fprintf(stderr, "client connection establised\n");
-    while (run) {
+    while (run && global_run) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
         pthread_mutex_unlock(&wait_mutex);
-        while (read_pos != write_pos && run) {
+        while (read_pos != write_pos && run && global_run) {
             int available = ringbuffer_bytes(read_pos);
             if (use_float) {
                 sent = send(client_sock, &ringbuffer_f[read_pos], available * sizeof(float), MSG_NOSIGNAL);
@@ -177,7 +180,7 @@ void* control_worker(void* p) {
     fprintf(stderr, "control socket started on %i\n", port);
 
     listen(listen_sock, 1);
-    while (1) {
+    while (global_run) {
         int rlen = sizeof(remote);
         int sock = accept(listen_sock, (struct sockaddr *)&remote, &rlen);
         fprintf(stderr, "control connection established\n");
@@ -185,7 +188,7 @@ void* control_worker(void* p) {
         bool run = true;
         uint8_t buf[256];
 
-        while (run) {
+        while (run && global_run) {
             read_bytes = recv(sock, &buf, 256, 0);
             if (read_bytes <= 0) {
                 run = false;
@@ -235,6 +238,12 @@ void* control_worker(void* p) {
     }
 }
 
+void sighandler(int signo) {
+    fprintf(stderr, "signal %i caught\n", signo);
+    rtlsdr_cancel_async(dev);
+    global_run = false;
+}
+
 void print_usage() {
     fprintf(stderr,
         "rtl_connector version %s\n\n"
@@ -266,6 +275,13 @@ int main(int argc, char** argv) {
     uint32_t samp_rate = 2400000;
     int gain = 0;
     int ppm = 0;
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = sighandler;
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGQUIT, &sa, NULL);
 
     ringbuffer_u8 = (uint8_t*) malloc(sizeof(uint8_t) * ringbuffer_size);
     ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
@@ -388,11 +404,13 @@ int main(int argc, char** argv) {
     fprintf(stderr, "socket setup complete, waiting for connections\n");
 
     listen(sock, 1);
-    while (1) {
+    while (global_run) {
         int rlen = sizeof(remote);
         int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
 
-        pthread_t client_worker_thread;
-        pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
+        if (client_sock >= 0) {
+            pthread_t client_worker_thread;
+            pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
+        }
     }
 }
