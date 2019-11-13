@@ -127,6 +127,8 @@ void* client_worker(void* s) {
     uint8_t buf[256];
     ssize_t read_bytes;
     bool use_float = true;
+
+    fprintf(stderr, "client connection establised\n");
     while (run) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
@@ -389,7 +391,6 @@ int main(int argc, char** argv) {
     while (1) {
         int rlen = sizeof(remote);
         int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
-        fprintf(stderr, "we got a connection\n");
 
         pthread_t client_worker_thread;
         pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
