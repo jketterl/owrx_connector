@@ -148,8 +148,8 @@ void* client_worker(void* s) {
                 run = false;
             }
         }
-        if (run) {
-            read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT);
+        if (run && use_float) {
+            read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
             if (read_bytes > 0) {
                 fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
                 use_float = false;
@@ -240,8 +240,8 @@ void* control_worker(void* p) {
 
 void sighandler(int signo) {
     fprintf(stderr, "signal %i caught\n", signo);
-    rtlsdr_cancel_async(dev);
     global_run = false;
+    rtlsdr_cancel_async(dev);
 }
 
 void print_usage() {
