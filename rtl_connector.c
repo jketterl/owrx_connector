@@ -134,6 +134,8 @@ void* client_worker(void* s) {
     uint8_t buf[256];
     ssize_t read_bytes;
     bool use_float = true;
+    void* ringbuffer = ringbuffer_f;
+    int sample_size = sizeof(float);
 
     fprintf(stderr, "client connection establised\n");
     while (run && global_run) {
@@ -142,12 +144,14 @@ void* client_worker(void* s) {
         pthread_mutex_unlock(&wait_mutex);
         while (read_pos != write_pos && run && global_run) {
             int available = ringbuffer_bytes(read_pos);
-            if (use_float) {
-                sent = send(client_sock, &ringbuffer_f[read_pos], available * sizeof(float), MSG_NOSIGNAL);
+            if (read_pos < write_pos) {
+                sent = send(client_sock, ringbuffer + read_pos * sample_size, available * sample_size, MSG_NOSIGNAL);
+                read_pos = (read_pos + available) % ringbuffer_size;
             } else {
-                sent = send(client_sock, &ringbuffer_u8[read_pos], available * sizeof(uint8_t), MSG_NOSIGNAL);
+                sent  = send(client_sock, ringbuffer + read_pos * sample_size, (ringbuffer_size - read_pos) * sample_size, MSG_NOSIGNAL);
+                read_pos = write_pos;
+                sent += send(client_sock, ringbuffer, read_pos * sample_size, MSG_NOSIGNAL);
             }
-            read_pos = (read_pos + available) % ringbuffer_size;
             if (sent <= 0) {
                 run = false;
             }
@@ -156,7 +160,9 @@ void* client_worker(void* s) {
             read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
             if (read_bytes > 0) {
                 fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
-                use_float = false;
+                use_float = true;
+                ringbuffer = ringbuffer_u8;
+                sample_size = sizeof(uint8_t);
             }
         }
     }
