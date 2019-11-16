@@ -90,13 +90,17 @@ pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
 
 void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
+    if (len != rtl_buffer_size) {
+        fprintf(stderr, "WARNING: invalid buffer size received; skipping input\n");
+        return;
+    }
     int i;
     for (i = 0; i < len; i++) {
-        ringbuffer_u8[write_pos] = buf[i];
-        ringbuffer_f[write_pos] = ((float)buf[i])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
-        write_pos += 1;
-        if (write_pos >= ringbuffer_size) write_pos = 0;
+        ringbuffer_u8[write_pos + i] = buf[i];
+        ringbuffer_f[write_pos + i] = ((float)buf[i])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
     }
+    write_pos += len;
+    if (write_pos >= ringbuffer_size) write_pos = 0;
     pthread_mutex_lock(&wait_mutex);
     pthread_cond_broadcast(&wait_condition);
     pthread_mutex_unlock(&wait_mutex);
