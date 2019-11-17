@@ -81,10 +81,10 @@ int verbose_device_search(char *s)
 #define RTL_BUFFER_SIZE 16 * 32 * 512
 uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
 // make the buffer a multiple of the rtl buffer size so we don't have to split writes / reads
-int ringbuffer_size = 10 * RTL_BUFFER_SIZE;
+uint32_t ringbuffer_size = 10 * RTL_BUFFER_SIZE;
 uint8_t* ringbuffer_u8;
 float* ringbuffer_f;
-int write_pos = 0;
+uint32_t write_pos = 0;
 
 pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
@@ -96,8 +96,9 @@ void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
     }
     uint32_t i;
     for (i = 0; i < len; i++) {
-        ringbuffer_u8[write_pos + i] = buf[i];
-        ringbuffer_f[write_pos + i] = ((float)buf[i])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
+        int w = (write_pos + i) % ringbuffer_size;
+        ringbuffer_u8[w] = buf[i];
+        ringbuffer_f[w] = ((float)buf[i])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
     }
     write_pos += len;
     if (write_pos >= ringbuffer_size) write_pos = 0;
@@ -127,7 +128,7 @@ int ringbuffer_bytes(int read_pos) {
 
 void* client_worker(void* s) {
     bool run = true;
-    int read_pos = write_pos;
+    uint32_t read_pos = write_pos;
     int client_sock = *(int*) s;
     ssize_t sent;
     uint8_t buf[256];
@@ -141,6 +142,15 @@ void* client_worker(void* s) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
         pthread_mutex_unlock(&wait_mutex);
+        if (run && use_float) {
+            read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
+            if (read_bytes > 0) {
+                fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
+                use_float = false;
+                ringbuffer = ringbuffer_u8;
+                sample_size = sizeof(uint8_t);
+            }
+        }
         while (read_pos != write_pos && run && global_run) {
             int available = ringbuffer_bytes(read_pos);
             if (read_pos < write_pos) {
@@ -153,15 +163,6 @@ void* client_worker(void* s) {
             }
             if (sent <= 0) {
                 run = false;
-            }
-        }
-        if (run && use_float) {
-            read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
-            if (read_bytes > 0) {
-                fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
-                use_float = true;
-                ringbuffer = ringbuffer_u8;
-                sample_size = sizeof(uint8_t);
             }
         }
     }
@@ -338,6 +339,7 @@ int main(int argc, char** argv) {
                 break;
         }
     }
+
     int dev_index = verbose_device_search(device_id);
 
     if (dev_index < 0) {

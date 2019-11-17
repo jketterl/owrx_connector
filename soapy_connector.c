@@ -21,11 +21,6 @@ bool global_run = true;
 
 int verbose_device_search(char *s, SoapySDRDevice **devOut)
 {
-	//size_t device_count = 0;
-	//size_t i = 0;
-	//int device, offset;
-	//char *s2;
-	//char vendor[256], product[256], serial[256];
 	SoapySDRDevice *dev = NULL;
 
 	dev = SoapySDRDevice_makeStrArgs(s);
@@ -33,8 +28,6 @@ int verbose_device_search(char *s, SoapySDRDevice **devOut)
 		fprintf(stderr, "SoapySDRDevice_make failed\n");
 		return -1;
 	}
-
-	//show_device_info(dev);
 
 	*devOut = dev;
 	return 0;
@@ -77,12 +70,12 @@ int verbose_gain_str_set(SoapySDRDevice *dev, char *gain_str, size_t channel)
 
 // this should be the default according to rtl-sdr.h
 #define SOAPY_BUFFER_SIZE 64512 * 4
-int soapy_buffer_size = SOAPY_BUFFER_SIZE;
+uint32_t soapy_buffer_size = SOAPY_BUFFER_SIZE;
 // make the buffer a multiple of the soapy buffer size so we don't have to split writes / reads
-int ringbuffer_size = 10 * SOAPY_BUFFER_SIZE;
+uint32_t ringbuffer_size = 10 * SOAPY_BUFFER_SIZE;
 uint8_t* ringbuffer_u8;
 float* ringbuffer_f;
-int write_pos = 0;
+uint32_t write_pos = 0;
 
 pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
@@ -125,11 +118,11 @@ void* iq_worker(void* arg) {
                 bytes_read = samples_read * 4;
 
                 for (i = 0; i < samples_read * 2; i++) {
-                    //ringbuffer_u8[write_pos] = ((int16_t)buf[i] / 32767.0 * 128.0 + 127.4);
-                    ringbuffer_f[write_pos] = (float) buf[i] / SHRT_MAX;
-                    write_pos += 1;
-                    if (write_pos >= ringbuffer_size) write_pos = 0;
+                    int w = (write_pos + i) % ringbuffer_size;
+                    ringbuffer_u8[w] = ((int16_t)buf[i] / 32767.0 * 128.0 + 127.4);
+                    ringbuffer_f[w] = (float) buf[i] / SHRT_MAX;
                 }
+                write_pos = (write_pos + samples_read * 2) % ringbuffer_size;
                 pthread_mutex_lock(&wait_mutex);
                 pthread_cond_broadcast(&wait_condition);
                 pthread_mutex_unlock(&wait_mutex);
@@ -156,7 +149,7 @@ int ringbuffer_bytes(int read_pos) {
 
 void* client_worker(void* s) {
     bool run = true;
-    int read_pos = write_pos;
+    uint32_t read_pos = write_pos;
     int client_sock = *(int*) s;
     ssize_t sent;
     uint8_t buf[256];
@@ -170,6 +163,15 @@ void* client_worker(void* s) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
         pthread_mutex_unlock(&wait_mutex);
+        if (run && use_float) {
+            read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
+            if (read_bytes > 0) {
+                fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
+                use_float = false;
+                ringbuffer = ringbuffer_u8;
+                sample_size = sizeof(uint8_t);
+            }
+        }
         while (read_pos != write_pos && run && global_run) {
             int available = ringbuffer_bytes(read_pos);
             if (read_pos < write_pos) {
@@ -182,15 +184,6 @@ void* client_worker(void* s) {
             }
             if (sent <= 0) {
                 run = false;
-            }
-        }
-        if (run && use_float) {
-            read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
-            if (read_bytes > 0) {
-                fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
-                use_float = true;
-                ringbuffer = ringbuffer_u8;
-                sample_size = sizeof(uint8_t);
             }
         }
     }
