@@ -84,7 +84,7 @@ void* iq_worker(void* arg) {
     SoapySDRStream* stream = NULL;
     int16_t* buf = malloc(soapy_buffer_size * SoapySDR_formatToSize(SOAPY_SDR_CS16));
     void* buffs[] = {buf};
-    int samples_read, bytes_read;
+    int samples_read;
     long long timeNs = 0;
     long timeoutNs = 1E6;
     int flags = 0;
@@ -115,8 +115,6 @@ void* iq_worker(void* arg) {
             //fprintf(stderr, "samples read from sdr: %i\n", samples_read);
 
             if (samples_read >= 0) {
-                bytes_read = samples_read * 4;
-
                 for (i = 0; i < samples_read * 2; i++) {
                     int w = (write_pos + i) % ringbuffer_size;
                     ringbuffer_u8[w] = ((int16_t)buf[i] / 32767.0 * 128.0 + 127.4);
@@ -239,7 +237,6 @@ void* control_worker(void* p) {
                     char* key = strtok_r(pair, ":", &pair_token);
                     char* value = strtok_r(NULL, ":", &pair_token);
                     int r = 0;
-                    // expected keys: "samp_rate", "center_freq", "ppm", "rf_gain"
                     if (strcmp(key, "samp_rate") == 0) {
                         uint32_t samp_rate = (uint32_t)strtoul(value, NULL, 10);
                         r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, channel, samp_rate);

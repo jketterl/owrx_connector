@@ -218,7 +218,6 @@ void* control_worker(void* p) {
                     char* key = strtok_r(pair, ":", &pair_token);
                     char* value = strtok_r(NULL, ":", &pair_token);
                     int r = 0;
-                    // expected keys: "samp_rate", "center_freq", "ppm", "rf_gain"
                     if (strcmp(key, "samp_rate") == 0) {
                         uint32_t samp_rate = (uint32_t)strtoul(value, NULL, 10);
                         r = rtlsdr_set_sample_rate(dev, samp_rate);
