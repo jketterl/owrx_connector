@@ -18,6 +18,7 @@ static SoapySDRDevice* dev = NULL;
 size_t channel = 0;
 
 bool global_run = true;
+bool iqswap = false;
 
 int verbose_device_search(char *s, SoapySDRDevice **devOut)
 {
@@ -116,7 +117,7 @@ void* iq_worker(void* arg) {
 
             if (samples_read >= 0) {
                 for (i = 0; i < samples_read * 2; i++) {
-                    int w = (write_pos + i) % ringbuffer_size;
+                    int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
                     ringbuffer_u8[w] = ((int16_t)buf[i] / 32767.0 * 128.0 + 127.4);
                     ringbuffer_f[w] = (float) buf[i] / SHRT_MAX;
                 }
@@ -251,6 +252,8 @@ void* control_worker(void* p) {
                         r = verbose_gain_str_set(dev, value, channel);
                     } else if (strcmp(key, "antenna") == 0) {
                         r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, value);
+                    } else if (strcmp(key, "iqswap") == 0) {
+                        iqswap = strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "True") == 0;
                     } else {
                         fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
                     }
@@ -328,9 +331,10 @@ int main(int argc, char** argv) {
         {"control", required_argument, NULL, 'c'},
         {"ppm", required_argument, NULL, 'P'},
         {"antenna", required_argument, NULL, 'a'},
+        {"iqswap", no_argument, NULL, 'i'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:a:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:a:i", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -361,6 +365,9 @@ int main(int argc, char** argv) {
                 break;
             case 'a':
                 antenna = optarg;
+                break;
+            case 'i':
+                iqswap = true;
                 break;
         }
     }
