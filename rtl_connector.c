@@ -16,6 +16,7 @@
 static rtlsdr_dev_t* dev = NULL;
 
 bool global_run = true;
+bool iqswap = false;
 
 int verbose_device_search(char *s)
 {
@@ -96,7 +97,7 @@ void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
     }
     uint32_t i;
     for (i = 0; i < len; i++) {
-        int w = (write_pos + i) % ringbuffer_size;
+        int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
         ringbuffer_u8[w] = buf[i];
         ringbuffer_f[w] = ((float)buf[i])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
     }
@@ -230,6 +231,8 @@ void* control_worker(void* p) {
                     } else if (strcmp(key, "rf_gain") == 0) {
                         int gain = (int)(atof(value) * 10); /* tenths of a dB */
                         r = rtlsdr_set_tuner_gain(dev, gain);
+                    } else if (strcmp(key, "iqswap") == 0) {
+                        iqswap = strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "True") == 0;
                     } else {
                         fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
                     }
@@ -305,9 +308,10 @@ int main(int argc, char** argv) {
         {"gain", required_argument, NULL, 'g'},
         {"control", required_argument, NULL, 'c'},
         {"ppm", required_argument, NULL, 'P'},
+        {"iqswap", no_argument, NULL, 'i'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:i", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -335,6 +339,9 @@ int main(int argc, char** argv) {
                 break;
             case 'P':
                 ppm = atoi(optarg);
+                break;
+            case 'i':
+                iqswap = true;
                 break;
         }
     }
