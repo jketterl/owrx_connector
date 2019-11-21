@@ -290,7 +290,8 @@ void print_usage() {
         " -g, --gain          set the gain level (default: 30)\n"
         " -c, --control       control socket port (default: disabled)\n"
         " -P, --ppm           set frequency correction ppm\n"
-        " -a, --antenna       select antenna input\n",
+        " -a, --antenna       select antenna input\n"
+        " -t, --settings      set sdr specific settings\n",
         VERSION
     );
 }
@@ -309,6 +310,7 @@ int main(int argc, char** argv) {
     char* gain = "";
     int ppm = 0;
     char* antenna = "";
+    char* settings = "";
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -332,9 +334,10 @@ int main(int argc, char** argv) {
         {"ppm", required_argument, NULL, 'P'},
         {"antenna", required_argument, NULL, 'a'},
         {"iqswap", no_argument, NULL, 'i'},
+        {"settings", required_argument, NULL, 't'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:a:i", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:a:it:", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -368,6 +371,9 @@ int main(int argc, char** argv) {
                 break;
             case 'i':
                 iqswap = true;
+                break;
+            case 't':
+                settings = optarg;
                 break;
         }
     }
@@ -404,6 +410,18 @@ int main(int argc, char** argv) {
     if (r < 0) {
         fprintf(stderr, "setting antenna failed\n");
         return 8;
+    }
+
+    if (strlen(settings) > 0) {
+        SoapySDRKwargs s = SoapySDRKwargs_fromString(settings);
+        unsigned int i;
+        for (i = 0; i < s.size; i++) {
+            const char *key = s.keys[i];
+            const char *value = s.vals[i];
+            if(SoapySDRDevice_writeSetting(dev, key, value) != 0) {
+                fprintf(stderr, "WARNING: key set failed: %s\n", SoapySDRDevice_lastError());
+            }
+        }
     }
 
     pthread_cond_init(&wait_condition, NULL);
