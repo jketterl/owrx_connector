@@ -11,12 +11,12 @@ By default, the IQ sample format is 32bit floats.
 
 ## rtl_tcp compatibility
 
-The data socket will detect if the connected application is sending any data. If it does, it will assume t switch the output
-format on the corresponding connection to 8bit unsigned int, which is accepted by many applications that support
-rtl_tcp.
+The data socket will detect if the connected application is sending any data. If it does, it will assume that the
+connected client is an application attempting to talk to rtl_tcp, and switch the output format on the corresponding
+connection to 8bit unsigned int, which is the default format of rtl_tcp.
 
-The connector does not evaluate any data on client connections, so your application will not be able to control the
-SDR hardware.
+The connector does not evaluate any data on client connections, so rtl_tcp commands will be discarded. This means
+that applications using rtl_tcp compatibiltiy will not be able to control the SDR hardware.
 
 ## Installation
 
