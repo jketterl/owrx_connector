@@ -18,6 +18,16 @@ connection to 8bit unsigned int, which is the default format of rtl_tcp.
 The connector does not evaluate any data on client connections, so rtl_tcp commands will be discarded. This means
 that applications using rtl_tcp compatibiltiy will not be able to control the SDR hardware.
 
+## Dependencies
+
+- If you want to work with rtlsdr devices, you will need to install the corresponding header files (on Debian:
+  `apt-get install librtlsdr-dev`)
+- If you want to work with devices supported by SoapySDR, you will need to install the corresponnding header files
+  (on Debian: `apt-get install libsoapysdr-dev`)
+
+If you have compiled rtlsdr / soapy from source, you should not need to worry about this. The installation should place
+the headers in their correct locations.
+
 ## Installation
 
 This project comes with a cmake build. It is recommended to build in a separate directory.
