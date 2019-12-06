@@ -84,14 +84,14 @@ pthread_mutex_t wait_mutex;
 void* iq_worker(void* arg) {
     char* format = SOAPY_SDR_CS16;
     double fullscale;
-    char* native_format = SoapySDRDevice_getNativeStreamFormat(dev, SOAPY_SDR_RX, &channel, &fullscale);
+    char* native_format = SoapySDRDevice_getNativeStreamFormat(dev, SOAPY_SDR_RX, channel, &fullscale);
     // use native CF32 if available
     if (strcmp(native_format, SOAPY_SDR_CF32) == 0) {
         format = SOAPY_SDR_CF32;
     }
 
     SoapySDRStream* stream = NULL;
-    int16_t* buf = malloc(soapy_buffer_size * SoapySDR_formatToSize(format));
+    void* buf = malloc(soapy_buffer_size * SoapySDR_formatToSize(format));
     void* buffs[] = {buf};
     int samples_read;
     long long timeNs = 0;
@@ -128,14 +128,14 @@ void* iq_worker(void* arg) {
                 if (format == SOAPY_SDR_CS16) {
                     for (i = 0; i < samples_read * 2; i++) {
                         int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
-                        ringbuffer_u8[w] = ((int16_t)buf[i] / 32767.0 * 128.0 + 127.4);
-                        ringbuffer_f[w] = (float) buf[i] / SHRT_MAX;
+                        ringbuffer_u8[w] = ((int16_t *)buf)[i] / 32767.0 * 128.0 + 127.4;
+                        ringbuffer_f[w] = (float)((int16_t *) buf)[i] / SHRT_MAX;
                     }
                 } else if (format == SOAPY_SDR_CF32) {
                     for (i = 0; i < samples_read * 2; i++) {
                         int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
-                        ringbuffer_u8[w] = ((int16_t)buf[i] / 32767.0 * 128.0 + 127.4);
-                        ringbuffer_f[w] = buf[i];
+                        ringbuffer_u8[w] = ((float *)buf)[i] * 128.0 + 127.4;
+                        ringbuffer_f[w] = ((float *)buf)[i];
                     }
                 }
                 write_pos = (write_pos + samples_read * 2) % ringbuffer_size;
