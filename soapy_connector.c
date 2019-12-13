@@ -23,50 +23,50 @@ bool rtltcp_compat = false;
 
 int verbose_device_search(char *s, SoapySDRDevice **devOut)
 {
-	SoapySDRDevice *dev = NULL;
+    SoapySDRDevice *dev = NULL;
 
-	dev = SoapySDRDevice_makeStrArgs(s);
-	if (!dev) {
-		fprintf(stderr, "SoapySDRDevice_make failed\n");
-		return -1;
-	}
+    dev = SoapySDRDevice_makeStrArgs(s);
+    if (!dev) {
+        fprintf(stderr, "SoapySDRDevice_make failed\n");
+        return -1;
+    }
 
-	*devOut = dev;
-	return 0;
+    *devOut = dev;
+    return 0;
 }
 
 int verbose_gain_str_set(SoapySDRDevice *dev, char *gain_str, size_t channel)
 {
-	int r = 0;
+    int r = 0;
 
-	if (strchr(gain_str, '=')) {
-		// Set each gain individually (more control)
-		SoapySDRKwargs args = SoapySDRKwargs_fromString(gain_str);
+    if (strchr(gain_str, '=')) {
+        // Set each gain individually (more control)
+        SoapySDRKwargs args = SoapySDRKwargs_fromString(gain_str);
 
-		for (size_t i = 0; i < args.size; ++i) {
-			const char *name = args.keys[i];
-			double value = atof(args.vals[i]);
+        for (size_t i = 0; i < args.size; ++i) {
+            const char *name = args.keys[i];
+            double value = atof(args.vals[i]);
 
-			fprintf(stderr, "Setting gain element %s: %f dB\n", name, value);
-			r = SoapySDRDevice_setGainElement(dev, SOAPY_SDR_RX, channel, name, value);
-			if (r != 0) {
-				fprintf(stderr, "WARNING: setGainElement(%s, %f) failed: %s\n", name, value,  SoapySDRDevice_lastError());
-			}
-		}
+            fprintf(stderr, "Setting gain element %s: %f dB\n", name, value);
+            r = SoapySDRDevice_setGainElement(dev, SOAPY_SDR_RX, channel, name, value);
+            if (r != 0) {
+                fprintf(stderr, "WARNING: setGainElement(%s, %f) failed: %s\n", name, value,  SoapySDRDevice_lastError());
+            }
+        }
 
-		SoapySDRKwargs_clear(&args);
-	} else {
-		// Set overall gain and let SoapySDR distribute amongst components
-		double value = atof(gain_str);
-		r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, channel, value);
-		if (r != 0) {
-			fprintf(stderr, "WARNING: Failed to set tuner gain: %s\n", SoapySDRDevice_lastError());
-		} else {
-			fprintf(stderr, "Tuner gain set to %0.2f dB.\n", value);
-		}
-		// TODO: read back and print each individual getGainElement()s
-	}
-	return r;
+        SoapySDRKwargs_clear(&args);
+    } else {
+        // Set overall gain and let SoapySDR distribute amongst components
+        double value = atof(gain_str);
+        r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, channel, value);
+        if (r != 0) {
+            fprintf(stderr, "WARNING: Failed to set tuner gain: %s\n", SoapySDRDevice_lastError());
+        } else {
+            fprintf(stderr, "Tuner gain set to %0.2f dB.\n", value);
+        }
+        // TODO: read back and print each individual getGainElement()s
+    }
+    return r;
 }
 
 
@@ -92,7 +92,7 @@ void convert_cs16_f(int16_t* in, float* out, uint32_t count) {
 void convert_cs16_u8(int16_t* in, uint8_t* out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
-	out[i] = in[i] / 32767.0 * 128.0 + 127.4;
+        out[i] = in[i] / 32767.0 * 128.0 + 127.4;
     }
 }
 
@@ -141,35 +141,35 @@ void* iq_worker(void* arg) {
             //fprintf(stderr, "samples read from sdr: %i\n", samples_read);
 
             if (samples_read >= 0) {
-		uint32_t len = samples_read * 2;
-                if (format == SOAPY_SDR_CS16) {
-		    int16_t* source = (int16_t*) buf;
-		    if (iqswap) {
-			source = (int16_t*) conversion_buffer;
-			for (i = 0; i < len; i++) {
-			    source[i] = ((int16_t *)buf)[i ^ 1];
-			}
-		    }
-		    if (write_pos + len <= ringbuffer_size) {
-		        convert_cs16_f(source, ringbuffer_f + write_pos, len);
-			if (rtltcp_compat) {
-			    convert_cs16_u8(source, ringbuffer_u8 + write_pos, len);
-			}
-		    } else {
-			uint32_t remaining = ringbuffer_size - write_pos;
-			convert_cs16_f(source, ringbuffer_f + write_pos, remaining);
-			convert_cs16_f(source + remaining, ringbuffer_f, len - remaining);
-			if (rtltcp_compat) {
-			    convert_cs16_u8(source, ringbuffer_u8 + write_pos, remaining);
-			    convert_cs16_u8(source + remaining, ringbuffer_u8, len - remaining);
-			}
-		    }
+            uint32_t len = samples_read * 2;
+            if (format == SOAPY_SDR_CS16) {
+                int16_t* source = (int16_t*) buf;
+                if (iqswap) {
+                    source = (int16_t*) conversion_buffer;
+                    for (i = 0; i < len; i++) {
+                        source[i] = ((int16_t *)buf)[i ^ 1];
+                    }
+                }
+                if (write_pos + len <= ringbuffer_size) {
+                convert_cs16_f(source, ringbuffer_f + write_pos, len);
+                if (rtltcp_compat) {
+                    convert_cs16_u8(source, ringbuffer_u8 + write_pos, len);
+                }
+            } else {
+                uint32_t remaining = ringbuffer_size - write_pos;
+                convert_cs16_f(source, ringbuffer_f + write_pos, remaining);
+                convert_cs16_f(source + remaining, ringbuffer_f, len - remaining);
+                if (rtltcp_compat) {
+                    convert_cs16_u8(source, ringbuffer_u8 + write_pos, remaining);
+                    convert_cs16_u8(source + remaining, ringbuffer_u8, len - remaining);
+                }
+            }
                 } else if (format == SOAPY_SDR_CF32) {
                     for (i = 0; i < len; i++) {
                         int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
-			if (rtltcp_compat) {
+                        if (rtltcp_compat) {
                             ringbuffer_u8[w] = ((float *)buf)[i] * 128.0 + 127.4;
-			}
+                        }
                         ringbuffer_f[w] = ((float *)buf)[i];
                     }
                 }
@@ -216,7 +216,7 @@ void* client_worker(void* s) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
         pthread_mutex_unlock(&wait_mutex);
-	if (rtltcp_compat && run && use_float) {
+        if (rtltcp_compat && run && use_float) {
             read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
             if (read_bytes > 0) {
                 fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
@@ -346,7 +346,7 @@ void print_usage() {
         " -P, --ppm           set frequency correction ppm\n"
         " -a, --antenna       select antenna input\n"
         " -t, --settings      set sdr specific settings\n"
-	" -r, --rtltcp        enable rtl_tcp compatibility mode\n",
+        " -r, --rtltcp        enable rtl_tcp compatibility mode\n",
         VERSION
     );
 }
@@ -387,7 +387,7 @@ int main(int argc, char** argv) {
         {"antenna", required_argument, NULL, 'a'},
         {"iqswap", no_argument, NULL, 'i'},
         {"settings", required_argument, NULL, 't'},
-	{"rtltcp", no_argument, NULL, 'r'},
+        {"rtltcp", no_argument, NULL, 'r'},
         { NULL, 0, NULL, 0 }
     };
     while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:a:it:r", long_options, NULL)) != -1) {
@@ -428,9 +428,9 @@ int main(int argc, char** argv) {
             case 't':
                 settings = optarg;
                 break;
-	    case 'r':
-		rtltcp_compat = true;
-		break;
+            case 'r':
+                rtltcp_compat = true;
+                break;
         }
     }
 
