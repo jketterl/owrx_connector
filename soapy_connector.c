@@ -19,6 +19,7 @@ size_t channel = 0;
 
 bool global_run = true;
 bool iqswap = false;
+bool rtltcp_compat = false;
 
 int verbose_device_search(char *s, SoapySDRDevice **devOut)
 {
@@ -81,6 +82,20 @@ uint32_t write_pos = 0;
 pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
 
+void convert_cs16_f(int16_t* in, float* out, uint32_t count) {
+    uint32_t i;
+    for (i = 0; i < count; i++) {
+        out[i] = (float)in[i] / SHRT_MAX;
+    }
+}
+
+void convert_cs16_u8(int16_t* in, uint8_t* out, uint32_t count) {
+    uint32_t i;
+    for (i = 0; i < count; i++) {
+	out[i] = in[i] / 32767.0 * 128.0 + 127.4;
+    }
+}
+
 void* iq_worker(void* arg) {
     char* format = SOAPY_SDR_CS16;
     double fullscale;
@@ -93,11 +108,12 @@ void* iq_worker(void* arg) {
     SoapySDRStream* stream = NULL;
     void* buf = malloc(soapy_buffer_size * SoapySDR_formatToSize(format));
     void* buffs[] = {buf};
+    void* conversion_buffer = malloc(soapy_buffer_size * SoapySDR_formatToSize(format));
     int samples_read;
     long long timeNs = 0;
     long timeoutNs = 1E6;
     int flags = 0;
-    int i;
+    uint32_t i;
     while (global_run) {
         SoapySDRKwargs stream_args = {0};
         size_t num_channels = SoapySDRDevice_getNumChannels(dev, SOAPY_SDR_RX);
@@ -125,20 +141,39 @@ void* iq_worker(void* arg) {
             //fprintf(stderr, "samples read from sdr: %i\n", samples_read);
 
             if (samples_read >= 0) {
+		uint32_t len = samples_read * 2;
                 if (format == SOAPY_SDR_CS16) {
-                    for (i = 0; i < samples_read * 2; i++) {
-                        int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
-                        ringbuffer_u8[w] = ((int16_t *)buf)[i] / 32767.0 * 128.0 + 127.4;
-                        ringbuffer_f[w] = (float)((int16_t *) buf)[i] / SHRT_MAX;
-                    }
+		    int16_t* source = (int16_t*) buf;
+		    if (iqswap) {
+			source = (int16_t*) conversion_buffer;
+			for (i = 0; i < len; i++) {
+			    source[i] = ((int16_t *)buf)[i ^ 1];
+			}
+		    }
+		    if (write_pos + len <= ringbuffer_size) {
+		        convert_cs16_f(source, ringbuffer_f + write_pos, len);
+			if (rtltcp_compat) {
+			    convert_cs16_u8(source, ringbuffer_u8 + write_pos, len);
+			}
+		    } else {
+			uint32_t remaining = ringbuffer_size - write_pos;
+			convert_cs16_f(source, ringbuffer_f + write_pos, remaining);
+			convert_cs16_f(source + remaining, ringbuffer_f, len - remaining);
+			if (rtltcp_compat) {
+			    convert_cs16_u8(source, ringbuffer_u8 + write_pos, remaining);
+			    convert_cs16_u8(source + remaining, ringbuffer_u8, len - remaining);
+			}
+		    }
                 } else if (format == SOAPY_SDR_CF32) {
-                    for (i = 0; i < samples_read * 2; i++) {
+                    for (i = 0; i < len; i++) {
                         int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
-                        ringbuffer_u8[w] = ((float *)buf)[i] * 128.0 + 127.4;
+			if (rtltcp_compat) {
+                            ringbuffer_u8[w] = ((float *)buf)[i] * 128.0 + 127.4;
+			}
                         ringbuffer_f[w] = ((float *)buf)[i];
                     }
                 }
-                write_pos = (write_pos + samples_read * 2) % ringbuffer_size;
+                write_pos = (write_pos + len) % ringbuffer_size;
                 pthread_mutex_lock(&wait_mutex);
                 pthread_cond_broadcast(&wait_condition);
                 pthread_mutex_unlock(&wait_mutex);
@@ -154,6 +189,7 @@ void* iq_worker(void* arg) {
         SoapySDRDevice_closeStream(dev, stream);
     }
     free(buf);
+    free(conversion_buffer);
 }
 
 // modulo that will respect the sign
@@ -173,13 +209,14 @@ void* client_worker(void* s) {
     bool use_float = true;
     void* ringbuffer = ringbuffer_f;
     int sample_size = sizeof(float);
+    int available;
 
     fprintf(stderr, "client connection establised\n");
     while (run && global_run) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
         pthread_mutex_unlock(&wait_mutex);
-        if (run && use_float) {
+	if (rtltcp_compat && run && use_float) {
             read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
             if (read_bytes > 0) {
                 fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
@@ -189,7 +226,7 @@ void* client_worker(void* s) {
             }
         }
         while (read_pos != write_pos && run && global_run) {
-            int available = ringbuffer_bytes(read_pos);
+            available = ringbuffer_bytes(read_pos);
             if (read_pos < write_pos) {
                 sent = send(client_sock, ringbuffer + read_pos * sample_size, available * sample_size, MSG_NOSIGNAL);
                 read_pos = (read_pos + available) % ringbuffer_size;
@@ -308,7 +345,8 @@ void print_usage() {
         " -c, --control       control socket port (default: disabled)\n"
         " -P, --ppm           set frequency correction ppm\n"
         " -a, --antenna       select antenna input\n"
-        " -t, --settings      set sdr specific settings\n",
+        " -t, --settings      set sdr specific settings\n"
+	" -r, --rtltcp        enable rtl_tcp compatibility mode\n",
         VERSION
     );
 }
@@ -336,9 +374,6 @@ int main(int argc, char** argv) {
     sigaction(SIGTERM, &sa, NULL);
     sigaction(SIGQUIT, &sa, NULL);
 
-    ringbuffer_u8 = (uint8_t*) malloc(sizeof(uint8_t) * ringbuffer_size);
-    ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
-
     static struct option long_options[] = {
         {"help", no_argument, NULL, 'h'},
         {"version", no_argument, NULL, 'v'},
@@ -352,9 +387,10 @@ int main(int argc, char** argv) {
         {"antenna", required_argument, NULL, 'a'},
         {"iqswap", no_argument, NULL, 'i'},
         {"settings", required_argument, NULL, 't'},
+	{"rtltcp", no_argument, NULL, 'r'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:a:it:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:a:it:r", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -392,8 +428,16 @@ int main(int argc, char** argv) {
             case 't':
                 settings = optarg;
                 break;
+	    case 'r':
+		rtltcp_compat = true;
+		break;
         }
     }
+
+    if (rtltcp_compat) {
+        ringbuffer_u8 = (uint8_t*) malloc(sizeof(uint8_t) * ringbuffer_size);
+    }
+    ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
 
     r = verbose_device_search(device_id, &dev);
     if (r != 0) {
