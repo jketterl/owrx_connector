@@ -141,29 +141,29 @@ void* iq_worker(void* arg) {
             //fprintf(stderr, "samples read from sdr: %i\n", samples_read);
 
             if (samples_read >= 0) {
-            uint32_t len = samples_read * 2;
-            if (format == SOAPY_SDR_CS16) {
-                int16_t* source = (int16_t*) buf;
-                if (iqswap) {
-                    source = (int16_t*) conversion_buffer;
-                    for (i = 0; i < len; i++) {
-                        source[i] = ((int16_t *)buf)[i ^ 1];
+                uint32_t len = samples_read * 2;
+                if (format == SOAPY_SDR_CS16) {
+                    int16_t* source = (int16_t*) buf;
+                    if (iqswap) {
+                        source = (int16_t*) conversion_buffer;
+                        for (i = 0; i < len; i++) {
+                            source[i] = ((int16_t *)buf)[i ^ 1];
+                        }
                     }
-                }
-                if (write_pos + len <= ringbuffer_size) {
-                convert_cs16_f(source, ringbuffer_f + write_pos, len);
-                if (rtltcp_compat) {
-                    convert_cs16_u8(source, ringbuffer_u8 + write_pos, len);
-                }
-            } else {
-                uint32_t remaining = ringbuffer_size - write_pos;
-                convert_cs16_f(source, ringbuffer_f + write_pos, remaining);
-                convert_cs16_f(source + remaining, ringbuffer_f, len - remaining);
-                if (rtltcp_compat) {
-                    convert_cs16_u8(source, ringbuffer_u8 + write_pos, remaining);
-                    convert_cs16_u8(source + remaining, ringbuffer_u8, len - remaining);
-                }
-            }
+                    if (write_pos + len <= ringbuffer_size) {
+                        convert_cs16_f(source, ringbuffer_f + write_pos, len);
+                        if (rtltcp_compat) {
+                            convert_cs16_u8(source, ringbuffer_u8 + write_pos, len);
+                        }
+                    } else {
+                        uint32_t remaining = ringbuffer_size - write_pos;
+                        convert_cs16_f(source, ringbuffer_f + write_pos, remaining);
+                        convert_cs16_f(source + remaining, ringbuffer_f, len - remaining);
+                        if (rtltcp_compat) {
+                            convert_cs16_u8(source, ringbuffer_u8 + write_pos, remaining);
+                            convert_cs16_u8(source + remaining, ringbuffer_u8, len - remaining);
+                        }
+                    }
                 } else if (format == SOAPY_SDR_CF32) {
                     for (i = 0; i < len; i++) {
                         int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
