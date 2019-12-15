@@ -17,6 +17,7 @@ static rtlsdr_dev_t* dev = NULL;
 
 bool global_run = true;
 bool iqswap = false;
+bool rtltcp_compat = false;
 
 int verbose_device_search(char *s)
 {
@@ -84,23 +85,38 @@ uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
 // make the buffer a multiple of the rtl buffer size so we don't have to split writes / reads
 uint32_t ringbuffer_size = 10 * RTL_BUFFER_SIZE;
 uint8_t* ringbuffer_u8;
+unsigned char* conversion_buffer;
 float* ringbuffer_f;
 uint32_t write_pos = 0;
 
 pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
 
+void convert_u8_cf32(unsigned char* in, float* out, uint32_t count) {
+    uint32_t i;
+    for (i = 0; i < count; i++) {
+        out[i] = ((float)in[i])/(UCHAR_MAX/2.0)-1.0;
+    }
+}
+
 void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
     if (len != rtl_buffer_size) {
         fprintf(stderr, "WARNING: invalid buffer size received; skipping input\n");
         return;
     }
-    uint32_t i;
-    for (i = 0; i < len; i++) {
-        int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
-        ringbuffer_u8[w] = buf[i];
-        ringbuffer_f[w] = ((float)buf[i])/(UCHAR_MAX/2.0)-1.0; //@convert_u8_f
+    unsigned char* source = buf;
+    if (iqswap) {
+        source = conversion_buffer;
+        uint32_t i;
+        for (i = 0; i < len; i++) {
+            source[i] = buf[i ^ 1];
+        }
     }
+    convert_u8_cf32(source, ringbuffer_f + write_pos, len);
+    if (rtltcp_compat) {
+        memcpy(ringbuffer_u8 + write_pos, source, len);
+    }
+
     write_pos += len;
     if (write_pos >= ringbuffer_size) write_pos = 0;
     pthread_mutex_lock(&wait_mutex);
@@ -143,7 +159,7 @@ void* client_worker(void* s) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
         pthread_mutex_unlock(&wait_mutex);
-        if (run && use_float) {
+        if (rtltcp_compat && run && use_float) {
             read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
             if (read_bytes > 0) {
                 fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
@@ -174,7 +190,7 @@ void* client_worker(void* s) {
 void* control_worker(void* p) {
     int port = *(int*) p;
     struct sockaddr_in local, remote;
-    char* addr = "127.0.0.1";
+    char* addr = "0.0.0.0";
     ssize_t read_bytes;
 
     fprintf(stderr, "setting up control socket...\n");
@@ -269,7 +285,8 @@ void print_usage() {
         " -s, --samplerate    use the specified samplerate\n"
         " -g, --gain          set the gain level (default: 30)\n"
         " -c, --control       control socket port (default: disabled)\n"
-        " -P, --ppm           set frequency correction ppm\n",
+        " -P, --ppm           set frequency correction ppm\n"
+        " -r, --rtltcp        enable rtl_tcp compatibility mode\n",
         VERSION
     );
 }
@@ -295,9 +312,6 @@ int main(int argc, char** argv) {
     sigaction(SIGTERM, &sa, NULL);
     sigaction(SIGQUIT, &sa, NULL);
 
-    ringbuffer_u8 = (uint8_t*) malloc(sizeof(uint8_t) * ringbuffer_size);
-    ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
-
     static struct option long_options[] = {
         {"help", no_argument, NULL, 'h'},
         {"version", no_argument, NULL, 'v'},
@@ -309,9 +323,10 @@ int main(int argc, char** argv) {
         {"control", required_argument, NULL, 'c'},
         {"ppm", required_argument, NULL, 'P'},
         {"iqswap", no_argument, NULL, 'i'},
+        {"rtltcp", no_argument, NULL, 'r'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:i", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:ir", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -343,8 +358,17 @@ int main(int argc, char** argv) {
             case 'i':
                 iqswap = true;
                 break;
+            case 'r':
+                rtltcp_compat = true;
+                break;
         }
     }
+
+    if (rtltcp_compat) {
+        ringbuffer_u8 = (uint8_t*) malloc(sizeof(uint8_t) * ringbuffer_size);
+    }
+    ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
+    conversion_buffer = (unsigned char*) malloc(sizeof(unsigned char) * rtl_buffer_size);
 
     int dev_index = verbose_device_search(device_id);
 
