@@ -96,6 +96,13 @@ void convert_cs16_u8(int16_t* in, uint8_t* out, uint32_t count) {
     }
 }
 
+void convert_cf32_u8(float* in, uint8_t* out, uint32_t count) {
+    uint32_t i;
+    for (i = 0; i < count; i++) {
+        out[i] = in[i] * 128.0 + 127.4;
+    }
+}
+
 void* iq_worker(void* arg) {
     char* format = SOAPY_SDR_CS16;
     double fullscale;
@@ -165,12 +172,26 @@ void* iq_worker(void* arg) {
                         }
                     }
                 } else if (format == SOAPY_SDR_CF32) {
-                    for (i = 0; i < len; i++) {
-                        int w = ((write_pos + i) % ringbuffer_size) ^ iqswap;
-                        if (rtltcp_compat) {
-                            ringbuffer_u8[w] = ((float *)buf)[i] * 128.0 + 127.4;
+                    float* source = (float*) buf;
+                    if (iqswap) {
+                        source = (float*) conversion_buffer;
+                        for (i = 0; i < len; i++) {
+                            source[i] = ((float *)buf)[i ^ 1];
                         }
-                        ringbuffer_f[w] = ((float *)buf)[i];
+                    }
+                    if (write_pos + len <= ringbuffer_size) {
+                        memcpy(ringbuffer_f + write_pos, source, len * 4);
+                        if (rtltcp_compat) {
+                            convert_cf32_u8(source, ringbuffer_u8 + write_pos, len);
+                        }
+                    } else {
+                        uint32_t remaining = ringbuffer_size - write_pos;
+                        memcpy(ringbuffer_f + write_pos, source, remaining * 4);
+                        memcpy(ringbuffer_f, source + remaining, (len - remaining) * 4);
+                        if (rtltcp_compat) {
+                            convert_cf32_u8(source, ringbuffer_u8 + write_pos, remaining);
+                            convert_cf32_u8(source + remaining, ringbuffer_u8, len - remaining);
+                        }
                     }
                 }
                 write_pos = (write_pos + len) % ringbuffer_size;
