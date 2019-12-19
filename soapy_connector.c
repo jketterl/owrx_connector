@@ -82,21 +82,21 @@ uint32_t write_pos = 0;
 pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
 
-void convert_cs16_f(int16_t* in, float* out, uint32_t count) {
+void convert_cs16_f(int16_t* restrict in, float* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
         out[i] = (float)in[i] / SHRT_MAX;
     }
 }
 
-void convert_cs16_u8(int16_t* in, uint8_t* out, uint32_t count) {
+void convert_cs16_u8(int16_t* restrict in, uint8_t* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
         out[i] = in[i] / 32767.0 * 128.0 + 127.4;
     }
 }
 
-void convert_cf32_u8(float* in, uint8_t* out, uint32_t count) {
+void convert_cf32_u8(float* restrict in, uint8_t* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
         out[i] = in[i] * 128.0 + 127.4;
