@@ -14,12 +14,67 @@
 #include <pthread.h>
 #include "version.h"
 
+#if SOAPY_SDR_API_VERSION < 0x00060000
+#include <ctype.h>
+#endif
+
 static SoapySDRDevice* dev = NULL;
 size_t channel = 0;
 
 bool global_run = true;
 bool iqswap = false;
 bool rtltcp_compat = false;
+
+#if SOAPY_SDR_API_VERSION < 0x00060000
+char *trimwhitespace(char *str)
+{
+    char *end;
+
+    // Trim leading space
+    while(isspace((unsigned char)*str)) str++;
+
+    if(*str == 0)  // All spaces?
+        return str;
+
+    // Trim trailing space
+    end = str + strlen(str) - 1;
+    while(end > str && isspace((unsigned char)*end)) end--;
+
+    // Write new null terminator character
+    end[1] = '\0';
+
+    return str;
+}
+
+
+
+SoapySDRKwargs parseKwArgs(char* markup) {
+    SoapySDRKwargs kwargs;
+
+    bool inKey = true;
+    char* key, val;
+    for (size_t i = 0; i < strlen(markup); i++) {
+        const char ch = markup[i];
+        if (inKey){
+            if (ch == '=') inKey = false;
+            else if (ch == ',') inKey = true;
+            else key += ch;
+        } else {
+            if (ch == ',') inKey = true;
+            else val += ch;
+        }
+        if ((inKey and (strlen(val) > 0 or (ch == ','))) or ((i+1) == strlen(markup))) {
+            key = trimwhitespace(key);
+            val = trimwhitespace(val);
+            if (strlen(key) > 0) SoapySDRKwargs_set(&kwargs, key, val);
+            key = "";
+            val = "";
+        }
+    }
+
+    return kwargs;
+}
+#endif
 
 int verbose_device_search(char *s, SoapySDRDevice **devOut)
 {
@@ -41,7 +96,11 @@ int verbose_gain_str_set(SoapySDRDevice *dev, char *gain_str, size_t channel)
 
     if (strchr(gain_str, '=')) {
         // Set each gain individually (more control)
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
         SoapySDRKwargs args = SoapySDRKwargs_fromString(gain_str);
+#else
+        SoapySDRKwargs args = parseKwArgs(gain_str);
+#endif
 
         for (size_t i = 0; i < args.size; ++i) {
             const char *name = args.keys[i];
@@ -55,6 +114,7 @@ int verbose_gain_str_set(SoapySDRDevice *dev, char *gain_str, size_t channel)
         }
 
         SoapySDRKwargs_clear(&args);
+
     } else {
         // Set overall gain and let SoapySDR distribute amongst components
         double value = atof(gain_str);
@@ -322,7 +382,12 @@ void* control_worker(void* p) {
                         r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, channel, frequency, &args);
                     } else if (strcmp(key, "ppm") == 0) {
                         int ppm = atoi(value);
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
                         r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, channel, ppm);
+#else
+                        SoapySDRKwargs args = {0};
+                        r = SoapySDRDevice_setFrequencyComponent(dev, SOAPY_SDR_RX, channel, "CORR", ppm, &args);
+#endif
                     } else if (strcmp(key, "rf_gain") == 0) {
                         r = verbose_gain_str_set(dev, value, channel);
                     } else if (strcmp(key, "antenna") == 0) {
@@ -481,7 +546,12 @@ int main(int argc, char** argv) {
     verbose_gain_str_set(dev, gain, channel);
 
     if (ppm != 0) {
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
         r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, channel, ppm);
+#else
+        SoapySDRKwargs args = {0};
+        r = SoapySDRDevice_setFrequencyComponent(dev, SOAPY_SDR_RX, channel, "CORR", ppm, &args);
+#endif
         if (r < 0) {
             fprintf(stderr, "setting ppm failed\n");
             return 7;
@@ -495,14 +565,22 @@ int main(int argc, char** argv) {
     }
 
     if (strlen(settings) > 0) {
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
         SoapySDRKwargs s = SoapySDRKwargs_fromString(settings);
+#else
+	SoapySDRKwargs s = parseKwArgs(settings);
+#endif
         unsigned int i;
         for (i = 0; i < s.size; i++) {
             const char *key = s.keys[i];
             const char *value = s.vals[i];
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
             if(SoapySDRDevice_writeSetting(dev, key, value) != 0) {
                 fprintf(stderr, "WARNING: key set failed: %s\n", SoapySDRDevice_lastError());
             }
+#else
+            SoapySDRDevice_writeSetting(dev, key, value);
+#endif
         }
     }
 
