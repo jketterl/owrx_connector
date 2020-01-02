@@ -52,23 +52,28 @@ SoapySDRKwargs parseKwArgs(char* markup) {
     SoapySDRKwargs kwargs;
 
     bool inKey = true;
-    char* key, val;
+    char* key = (char*) malloc(sizeof(char) * 255);
+    char* val = (char*) malloc(sizeof(char) * 255);
+    key[0] = 0;
+    val[0] = 0;
     for (size_t i = 0; i < strlen(markup); i++) {
         const char ch = markup[i];
         if (inKey){
             if (ch == '=') inKey = false;
             else if (ch == ',') inKey = true;
-            else key += ch;
+            else strncat(key, &ch, 1);
         } else {
             if (ch == ',') inKey = true;
-            else val += ch;
+            else strncat(val, &ch, 1);
         }
         if ((inKey and (strlen(val) > 0 or (ch == ','))) or ((i+1) == strlen(markup))) {
             key = trimwhitespace(key);
             val = trimwhitespace(val);
             if (strlen(key) > 0) SoapySDRKwargs_set(&kwargs, key, val);
-            key = "";
-            val = "";
+            char* key = (char*) malloc(sizeof(char) * 255);
+            char* val = (char*) malloc(sizeof(char) * 255);
+            key[0] = 0;
+            val[0] = 0;
         }
     }
 
