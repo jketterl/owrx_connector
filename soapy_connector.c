@@ -50,6 +50,9 @@ char *trimwhitespace(char *str)
 
 SoapySDRKwargs parseKwArgs(char* markup) {
     SoapySDRKwargs kwargs;
+    kwargs.size = 0;
+    kwargs.keys = (char **) malloc(0);
+    kwargs.vals = (char **) malloc(0);
 
     bool inKey = true;
     char* key = (char*) malloc(sizeof(char) * 255);
@@ -67,15 +70,19 @@ SoapySDRKwargs parseKwArgs(char* markup) {
             else strncat(val, &ch, 1);
         }
         if ((inKey and (strlen(val) > 0 or (ch == ','))) or ((i+1) == strlen(markup))) {
-            key = trimwhitespace(key);
-            val = trimwhitespace(val);
-            if (strlen(key) > 0) SoapySDRKwargs_set(&kwargs, key, val);
-            char* key = (char*) malloc(sizeof(char) * 255);
-            char* val = (char*) malloc(sizeof(char) * 255);
+            char* key_trimmed = trimwhitespace(key);
+            char* val_trimmed = trimwhitespace(val);
+            char* key_copy = malloc(sizeof(char) * strlen(key_trimmed) + 1);
+            strcpy(key_copy, key_trimmed);
+            char* val_copy = malloc(sizeof(char) * strlen(val_trimmed) + 1);
+            strcpy(val_copy, val_trimmed);
+            if (strlen(key_copy) > 0) SoapySDRKwargs_set(&kwargs, key_copy, val_copy);
             key[0] = 0;
             val[0] = 0;
         }
     }
+    free(key);
+    free(val);
 
     return kwargs;
 }
