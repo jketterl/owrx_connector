@@ -5,7 +5,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
 find_package(Threads REQUIRED)
 find_package(RTLSDR)
-find_package(SoapySDR "0.6")
+find_package(SoapySDR "0.5")
 
 
 SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
