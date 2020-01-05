@@ -1,11 +1,11 @@
-cmake_minimum_required (VERSION 2.6)
-project (owrx-connector)
+cmake_minimum_required (VERSION 3.0)
+project (owrx-connector VERSION 0.1.0)
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
 find_package(Threads REQUIRED)
 find_package(RTLSDR)
-find_package(SoapySDR "0.5")
+find_package(SoapySDR "0.6")
 
 
 SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
@@ -33,10 +33,12 @@ SET(CMAKE_CXX_FLAGS "-O3")
 SET(CMAKE_C_FLAGS "-O3")
 
 SET(CPACK_GENERATOR "DEB")
-SET(CPACK_PACKAGE_VERSION "0.1")
 SET(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jakob Ketterl <jakob.ketterl@gmx.de>")
 SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "OpenWebRX SDR hardware interfacing binaries")
 SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS "ON")
 SET(CPACK_DEBIAN_PACKAGE_SECTION "hamradio")
+if(DEFINED ENV{BUILD_NUMBER})
+  SET(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}-$ENV{BUILD_NUMBER}")
+endif()
 INCLUDE(CPack)
