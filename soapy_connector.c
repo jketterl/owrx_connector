@@ -176,6 +176,9 @@ void convert_cf32_u8(float* restrict in, uint8_t* restrict out, uint32_t count) 
 }
 
 void* iq_worker(void* arg) {
+    // arg is forced on us by the threading code... to avoid compiler warnings:
+    (void)arg;
+
     char* format = SOAPY_SDR_CS16;
     double fullscale;
     char* native_format = SoapySDRDevice_getNativeStreamFormat(dev, SOAPY_SDR_RX, channel, &fullscale);
@@ -198,19 +201,19 @@ void* iq_worker(void* arg) {
         size_t num_channels = SoapySDRDevice_getNumChannels(dev, SOAPY_SDR_RX);
         if(((size_t) channel) >= num_channels){
             fprintf(stderr, "Invalid channel %d selected\n", (int)channel);
-            return -3;
+            return NULL;
         }
 
         #if SOAPY_SDR_API_VERSION < 0x00080000
         if (SoapySDRDevice_setupStream(dev, &stream, SOAPY_SDR_RX, format, &channel, 1, &stream_args) != 0) {
             fprintf(stderr, "SoapySDRDevice_setupStream failed: %s\n", SoapySDRDevice_lastError());
-            return -3;
+            return NULL;
         }
         #else
         stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, format, &channel, 1, &stream_args);
         if (stream == NULL) {
             fprintf(stderr, "SoapySDRDevice_setupStream failed: %s\n", SoapySDRDevice_lastError());
-            return -3;
+            return NULL;
         }
         #endif
         SoapySDRDevice_activateStream(dev, stream, 0, 0, 0);
@@ -221,7 +224,10 @@ void* iq_worker(void* arg) {
 
             if (samples_read >= 0) {
                 uint32_t len = samples_read * 2;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress"
                 if (format == SOAPY_SDR_CS16) {
+#pragma GCC diagnostic pop
                     int16_t* source = (int16_t*) buf;
                     if (iqswap) {
                         source = (int16_t*) conversion_buffer;
@@ -243,7 +249,10 @@ void* iq_worker(void* arg) {
                             convert_cs16_u8(source + remaining, ringbuffer_u8, len - remaining);
                         }
                     }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress"
                 } else if (format == SOAPY_SDR_CF32) {
+#pragma GCC diagnostic pop
                     float* source = (float*) buf;
                     if (iqswap) {
                         source = (float*) conversion_buffer;
@@ -283,6 +292,8 @@ void* iq_worker(void* arg) {
     }
     free(buf);
     free(conversion_buffer);
+
+    return NULL;
 }
 
 // modulo that will respect the sign
@@ -335,6 +346,8 @@ void* client_worker(void* s) {
     }
     fprintf(stderr, "closing client socket\n");
     close(client_sock);
+
+    return NULL;
 }
 
 void* control_worker(void* p) {
@@ -358,7 +371,7 @@ void* control_worker(void* p) {
 
     listen(listen_sock, 1);
     while (global_run) {
-        int rlen = sizeof(remote);
+        socklen_t rlen = sizeof(remote);
         int sock = accept(listen_sock, (struct sockaddr *)&remote, &rlen);
         fprintf(stderr, "control connection established\n");
 
@@ -421,6 +434,8 @@ void* control_worker(void* p) {
         }
         fprintf(stderr, "control connection ended\n");
     }
+
+    return NULL;
 }
 
 void sighandler(int signo) {
@@ -622,7 +637,7 @@ int main(int argc, char** argv) {
 
     listen(sock, 1);
     while (global_run) {
-        int rlen = sizeof(remote);
+        socklen_t rlen = sizeof(remote);
         int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
 
         if (client_sock >= 0) {
