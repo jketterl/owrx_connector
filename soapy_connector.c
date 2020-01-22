@@ -402,7 +402,7 @@ void* control_worker(void* p) {
                         uint32_t samp_rate = (uint32_t)strtoul(value, NULL, 10);
                         r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, channel, samp_rate);
                     } else if (strcmp(key, "center_freq") == 0) {
-                        uint32_t frequency = (uint32_t)strtoul(value, NULL, 10);
+                        double frequency = strtod(value, NULL);
                         SoapySDRKwargs args = {0};
                         r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, channel, frequency, &args);
                     } else if (strcmp(key, "ppm") == 0) {
@@ -473,7 +473,7 @@ int main(int argc, char** argv) {
     int sock;
     struct sockaddr_in local, remote;
     char* addr = "127.0.0.1";
-    uint32_t frequency = 145000000;
+    double frequency = 145000000;
     uint32_t samp_rate = 2048000;
     char* gain = "";
     int ppm = 0;
@@ -518,7 +518,7 @@ int main(int argc, char** argv) {
                 port = atoi(optarg);
                 break;
             case 'f':
-                frequency = (uint32_t)strtoul(optarg, NULL, 10);
+                frequency = strtod(optarg, NULL);
                 break;
             case 's':
                 samp_rate = (uint32_t)strtoul(optarg, NULL, 10);
