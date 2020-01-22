@@ -1,5 +1,6 @@
 #include <SoapySDR/Device.h>
 #include <SoapySDR/Formats.h>
+#include <SoapySDR/Version.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -204,18 +205,18 @@ void* iq_worker(void* arg) {
             return NULL;
         }
 
-        #if SOAPY_SDR_API_VERSION < 0x00080000
+#if SOAPY_SDR_API_VERSION < 0x00080000
         if (SoapySDRDevice_setupStream(dev, &stream, SOAPY_SDR_RX, format, &channel, 1, &stream_args) != 0) {
             fprintf(stderr, "SoapySDRDevice_setupStream failed: %s\n", SoapySDRDevice_lastError());
             return NULL;
         }
-        #else
+#else
         stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, format, &channel, 1, &stream_args);
         if (stream == NULL) {
             fprintf(stderr, "SoapySDRDevice_setupStream failed: %s\n", SoapySDRDevice_lastError());
             return NULL;
         }
-        #endif
+#endif
         SoapySDRDevice_activateStream(dev, stream, 0, 0, 0);
 
         while (global_run){
