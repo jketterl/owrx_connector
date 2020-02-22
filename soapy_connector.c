@@ -107,6 +107,11 @@ int verbose_gain_str_set(SoapySDRDevice *dev, char *gain_str, size_t channel)
 {
     int r = 0;
 
+    r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, channel, false);
+    if (r != 0) {
+        fprintf(stderr, "WARNING: disabling agc failed\n");
+    }
+
     if (strchr(gain_str, '=')) {
         // Set each gain individually (more control)
 #if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
