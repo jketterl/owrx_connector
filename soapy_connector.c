@@ -147,6 +147,29 @@ int verbose_gain_str_set(SoapySDRDevice *dev, char *gain_str, size_t channel)
     return r;
 }
 
+void verbose_settings_set(SoapySDRDevice* dev, char* settings) {
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
+    SoapySDRKwargs s = SoapySDRKwargs_fromString(settings);
+#else
+    SoapySDRKwargs s = parseKwArgs(settings);
+#endif
+    unsigned int i;
+    for (i = 0; i < s.size; i++) {
+        const char *key = s.keys[i];
+        const char *value = s.vals[i];
+
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
+        // return code has been added in soapy 0.6
+        if(SoapySDRDevice_writeSetting(dev, key, value) != 0) {
+            fprintf(stderr, "WARNING: key set failed: %s\n", SoapySDRDevice_lastError());
+        }
+#else
+        // return type is void in older versions
+        SoapySDRDevice_writeSetting(dev, key, value);
+#endif
+    }
+}
+
 
 // this should be the default according to rtl-sdr.h
 #define SOAPY_BUFFER_SIZE 64512 * 4
@@ -425,6 +448,8 @@ void* control_worker(void* p) {
                         r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, value);
                     } else if (strcmp(key, "iqswap") == 0) {
                         iqswap = strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "True") == 0;
+                    } else if (strcmp(key, "settings") == 0) {
+                        verbose_settings_set(dev, value);
                     } else {
                         fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
                     }
@@ -598,23 +623,7 @@ int main(int argc, char** argv) {
     }
 
     if (strlen(settings) > 0) {
-#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
-        SoapySDRKwargs s = SoapySDRKwargs_fromString(settings);
-#else
-	SoapySDRKwargs s = parseKwArgs(settings);
-#endif
-        unsigned int i;
-        for (i = 0; i < s.size; i++) {
-            const char *key = s.keys[i];
-            const char *value = s.vals[i];
-#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
-            if(SoapySDRDevice_writeSetting(dev, key, value) != 0) {
-                fprintf(stderr, "WARNING: key set failed: %s\n", SoapySDRDevice_lastError());
-            }
-#else
-            SoapySDRDevice_writeSetting(dev, key, value);
-#endif
-        }
+        verbose_settings_set(dev, settings);
     }
 
     pthread_cond_init(&wait_condition, NULL);
