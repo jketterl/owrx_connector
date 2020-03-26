@@ -188,13 +188,18 @@ void* client_worker(void* s) {
     close(client_sock);
 }
 
-bool convertBooleanValue(char* value) {
-    int i, s = strlen(value);
+char* strtolower(char* input) {
+    int i, s = strlen(input);
     char* lower = malloc(sizeof(char) * (s + 1));
     for (i = 0; i < s; i++) {
-        lower[i] = tolower(value[i]);
+        lower[i] = tolower(input[i]);
     }
     lower[s] = 0;
+    return lower;
+}
+
+bool convertBooleanValue(char* value) {
+    char* lower = strtolower(value);
     return strcmp(value, "1") == 0 || strcmp(lower, "true") == 0;
 }
 
@@ -256,8 +261,13 @@ void* control_worker(void* p) {
                         int ppm = atoi(value);
                         r = rtlsdr_set_freq_correction(dev, ppm);
                     } else if (strcmp(key, "rf_gain") == 0) {
-                        int gain = (int)(atof(value) * 10); /* tenths of a dB */
-                        r = rtlsdr_set_tuner_gain(dev, gain);
+                        char* lower = strtolower(value);
+                        if (strcmp(lower, "auto") == 0 || strcmp(lower, "none") == 0) {
+                            rtlsdr_set_tuner_gain_mode(dev, 0);
+                        } else {
+                            int gain = (int)(atof(value) * 10); /* tenths of a dB */
+                            r = rtlsdr_set_tuner_gain(dev, gain);
+                        }
                     } else if (strcmp(key, "iqswap") == 0) {
                         iqswap = convertBooleanValue(value);
                     } else if (strcmp(key, "bias_tee") == 0) {
@@ -316,6 +326,7 @@ int main(int argc, char** argv) {
     char* addr = "127.0.0.1";
     uint32_t frequency = 145000000;
     uint32_t samp_rate = 2400000;
+    bool agc = false;
     int gain = 0;
     int ppm = 0;
     bool biastee = false;
@@ -363,7 +374,11 @@ int main(int argc, char** argv) {
                 samp_rate = (uint32_t)strtoul(optarg, NULL, 10);
                 break;
             case 'g':
-                gain = (int)(atof(optarg) * 10); /* tenths of a dB */
+                if (strcmp(strtolower(optarg), "auto") == 0) {
+                    agc = true;
+                } else {
+                    gain = (int)(atof(optarg) * 10); /* tenths of a dB */
+                }
                 break;
             case 'c':
                 control_port = atoi(optarg);
@@ -414,16 +429,19 @@ int main(int argc, char** argv) {
         return 4;
     }
 
-    r = rtlsdr_set_tuner_gain_mode(dev, 0);
+    int gainmode = agc ? 0 : 1;
+    r = rtlsdr_set_tuner_gain_mode(dev, gainmode);
     if (r < 0) {
         fprintf(stderr, "setting gain mode failed\n");
         return 5;
     }
 
-    r = rtlsdr_set_tuner_gain(dev, gain);
-    if (r < 0) {
-        fprintf(stderr, "setting gain failed\n");
-        return 6;
+    if (!agc) {
+        r = rtlsdr_set_tuner_gain(dev, gain);
+        if (r < 0) {
+            fprintf(stderr, "setting gain failed\n");
+            return 6;
+        }
     }
 
     if (ppm != 0) {
