@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <ctype.h>
 #include "version.h"
 
 #if SOAPY_SDR_API_VERSION < 0x00060000
@@ -103,14 +104,34 @@ int verbose_device_search(char *s, SoapySDRDevice **devOut)
     return 0;
 }
 
+char* strtolower(char* input) {
+    int i, s = strlen(input);
+    char* lower = malloc(sizeof(char) * (s + 1));
+    for (i = 0; i < s; i++) {
+        lower[i] = tolower(input[i]);
+    }
+    lower[s] = 0;
+    return lower;
+}
+
+bool convertBooleanValue(char* value) {
+    char* lower = strtolower(value);
+    return strcmp(value, "1") == 0 || strcmp(lower, "true") == 0;
+}
+
 int verbose_gain_str_set(SoapySDRDevice *dev, char *gain_str, size_t channel)
 {
     int r = 0;
 
-    r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, channel, false);
+    char* lower = strtolower(gain_str);
+    bool agc = strcmp(lower, "auto") == 0 || strcmp(lower, "none") == 0;
+    r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, channel, agc);
     if (r != 0) {
-        fprintf(stderr, "WARNING: disabling agc failed\n");
+        fprintf(stderr, "WARNING: setting agc failed\n");
     }
+
+    // early exit when agc is on
+    if (agc) return r;
 
     if (strchr(gain_str, '=')) {
         // Set each gain individually (more control)
@@ -447,7 +468,7 @@ void* control_worker(void* p) {
                     } else if (strcmp(key, "antenna") == 0) {
                         r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, value);
                     } else if (strcmp(key, "iqswap") == 0) {
-                        iqswap = strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "True") == 0;
+                        iqswap = convertBooleanValue(value);
                     } else if (strcmp(key, "settings") == 0) {
                         verbose_settings_set(dev, value);
                     } else {
@@ -485,7 +506,7 @@ void print_usage() {
         " -p, --port          listen port (default: 4590)\n"
         " -f, --frequency     tune to specified frequency\n"
         " -s, --samplerate    use the specified samplerate\n"
-        " -g, --gain          set the gain level (default: 30)\n"
+        " -g, --gain          set the gain level (default: 0; accepts 'auto' for agc)\n"
         " -c, --control       control socket port (default: disabled)\n"
         " -P, --ppm           set frequency correction ppm\n"
         " -a, --antenna       select antenna input\n"
