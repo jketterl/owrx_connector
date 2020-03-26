@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <ctype.h>
 #include "version.h"
 
 static rtlsdr_dev_t* dev = NULL;
@@ -187,6 +188,16 @@ void* client_worker(void* s) {
     close(client_sock);
 }
 
+bool convertBooleanValue(char* value) {
+    int i, s = strlen(value);
+    char* lower = malloc(sizeof(char) * (s + 1));
+    for (i = 0; i < s; i++) {
+        lower[i] = tolower(value[i]);
+    }
+    lower[s] = 0;
+    return strcmp(value, "1") == 0 || strcmp(lower, "true") == 0;
+}
+
 void* control_worker(void* p) {
     int port = *(int*) p;
     struct sockaddr_in local, remote;
@@ -248,7 +259,9 @@ void* control_worker(void* p) {
                         int gain = (int)(atof(value) * 10); /* tenths of a dB */
                         r = rtlsdr_set_tuner_gain(dev, gain);
                     } else if (strcmp(key, "iqswap") == 0) {
-                        iqswap = strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "True") == 0;
+                        iqswap = convertBooleanValue(value);
+                    } else if (strcmp(key, "bias_tee") == 0) {
+                        r = rtlsdr_set_bias_tee(dev, (int) convertBooleanValue(value));
                     } else {
                         fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
                     }
@@ -286,7 +299,8 @@ void print_usage() {
         " -g, --gain          set the gain level (default: 30)\n"
         " -c, --control       control socket port (default: disabled)\n"
         " -P, --ppm           set frequency correction ppm\n"
-        " -r, --rtltcp        enable rtl_tcp compatibility mode\n",
+        " -r, --rtltcp        enable rtl_tcp compatibility mode\n"
+        " -b, --biastee       enable bias-tee voltage if supported by hardware\n",
         VERSION
     );
 }
@@ -304,6 +318,7 @@ int main(int argc, char** argv) {
     uint32_t samp_rate = 2400000;
     int gain = 0;
     int ppm = 0;
+    bool biastee = false;
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -324,9 +339,10 @@ int main(int argc, char** argv) {
         {"ppm", required_argument, NULL, 'P'},
         {"iqswap", no_argument, NULL, 'i'},
         {"rtltcp", no_argument, NULL, 'r'},
+        {"biastee", no_argument, NULL, 'b'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:ir", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:irb", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -360,6 +376,9 @@ int main(int argc, char** argv) {
                 break;
             case 'r':
                 rtltcp_compat = true;
+                break;
+            case 'b':
+                biastee = true;
                 break;
         }
     }
@@ -413,6 +432,11 @@ int main(int argc, char** argv) {
             fprintf(stderr, "setting ppm failed\n");
             return 7;
         }
+    }
+
+    r = rtlsdr_set_bias_tee(dev, (int) biastee);
+    if (r < 0) {
+        fprintf(stderr, "setting biastee failed\n");
     }
 
     r = rtlsdr_reset_buffer(dev);
