@@ -306,7 +306,7 @@ void print_usage() {
         " -p, --port          listen port (default: 4590)\n"
         " -f, --frequency     tune to specified frequency\n"
         " -s, --samplerate    use the specified samplerate\n"
-        " -g, --gain          set the gain level (default: 30)\n"
+        " -g, --gain          set the gain level (default: 0; accepts 'auto' for agc)\n"
         " -c, --control       control socket port (default: disabled)\n"
         " -P, --ppm           set frequency correction ppm\n"
         " -r, --rtltcp        enable rtl_tcp compatibility mode\n"
