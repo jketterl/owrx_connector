@@ -272,6 +272,8 @@ void* control_worker(void* p) {
                         iqswap = convertBooleanValue(value);
                     } else if (strcmp(key, "bias_tee") == 0) {
                         r = rtlsdr_set_bias_tee(dev, (int) convertBooleanValue(value));
+                    } else if (strcmp(key, "direct_sampling") == 0) {
+                        r = rtlsdr_set_direct_sampling(dev, (int)strtol(value, NULL, 10));
                     } else {
                         fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
                     }
@@ -300,17 +302,19 @@ void print_usage() {
         "rtl_connector version %s\n\n"
         "Usage: rtl_connector [options]\n\n"
         "Available options:\n"
-        " -h, --help          show this message\n"
-        " -v, --version       print version and exit\n"
-        " -d, --device        device index (default: 0)\n"
-        " -p, --port          listen port (default: 4590)\n"
-        " -f, --frequency     tune to specified frequency\n"
-        " -s, --samplerate    use the specified samplerate\n"
-        " -g, --gain          set the gain level (default: 0; accepts 'auto' for agc)\n"
-        " -c, --control       control socket port (default: disabled)\n"
-        " -P, --ppm           set frequency correction ppm\n"
-        " -r, --rtltcp        enable rtl_tcp compatibility mode\n"
-        " -b, --biastee       enable bias-tee voltage if supported by hardware\n",
+        " -h, --help              show this message\n"
+        " -v, --version           print version and exit\n"
+        " -d, --device            device index (default: 0)\n"
+        " -p, --port              listen port (default: 4590)\n"
+        " -f, --frequency         tune to specified frequency\n"
+        " -s, --samplerate        use the specified samplerate\n"
+        " -g, --gain              set the gain level (default: 0; accepts 'auto' for agc)\n"
+        " -c, --control           control socket port (default: disabled)\n"
+        " -P, --ppm               set frequency correction ppm\n"
+        " -r, --rtltcp            enable rtl_tcp compatibility mode\n"
+        " -b, --biastee           enable bias-tee voltage if supported by hardware\n"
+        " -e, --directsampling    enable direct sampling on the specified input\n"
+        "                         (0 = disabled, 1 = I-input, 2 = Q-input)\n",
         VERSION
     );
 }
@@ -330,6 +334,7 @@ int main(int argc, char** argv) {
     int gain = 0;
     int ppm = 0;
     bool biastee = false;
+    int directsampling = -1;
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -351,9 +356,10 @@ int main(int argc, char** argv) {
         {"iqswap", no_argument, NULL, 'i'},
         {"rtltcp", no_argument, NULL, 'r'},
         {"biastee", no_argument, NULL, 'b'},
+        {"directsampling", required_argument, NULL, 'e'},
         { NULL, 0, NULL, 0 }
     };
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:irb", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:irbe:", long_options, NULL)) != -1) {
         switch (c) {
             case 'v':
                 print_version();
@@ -394,6 +400,9 @@ int main(int argc, char** argv) {
                 break;
             case 'b':
                 biastee = true;
+                break;
+            case 'e':
+                directsampling = (int)strtol(optarg, NULL, 10);
                 break;
         }
     }
@@ -455,6 +464,13 @@ int main(int argc, char** argv) {
     r = rtlsdr_set_bias_tee(dev, (int) biastee);
     if (r < 0) {
         fprintf(stderr, "setting biastee failed\n");
+    }
+
+    if (directsampling >= 0 && directsampling <= 2) {
+        r = rtlsdr_set_direct_sampling(dev, directsampling);
+        if (r < 0) {
+            fprintf(stderr, "setting direct sampling mode failed\n");
+        }
     }
 
     r = rtlsdr_reset_buffer(dev);
