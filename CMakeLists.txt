@@ -29,6 +29,10 @@ if (SoapySDR_FOUND)
     install(TARGETS soapy_connector DESTINATION bin)
 endif()
 
+if (NOT RTLSDR_FOUND AND NOT SoapySDR_FOUND)
+    message(SEND_ERROR "ERROR: Neither SoapySDR nor rtlsdr libraries have been found, there's nothing to build.")
+endif()
+
 SET(CMAKE_CXX_FLAGS "-O3")
 SET(CMAKE_C_FLAGS "-O3")
 
