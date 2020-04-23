@@ -270,8 +270,10 @@ void* control_worker(void* p) {
                         }
                     } else if (strcmp(key, "iqswap") == 0) {
                         iqswap = convertBooleanValue(value);
+#if HAS_RTLSDR_SET_BIAS_TEE
                     } else if (strcmp(key, "bias_tee") == 0) {
                         r = rtlsdr_set_bias_tee(dev, (int) convertBooleanValue(value));
+#endif
                     } else if (strcmp(key, "direct_sampling") == 0) {
                         r = rtlsdr_set_direct_sampling(dev, (int)strtol(value, NULL, 10));
                     } else {
@@ -312,7 +314,9 @@ void print_usage() {
         " -c, --control           control socket port (default: disabled)\n"
         " -P, --ppm               set frequency correction ppm\n"
         " -r, --rtltcp            enable rtl_tcp compatibility mode\n"
+#if HAS_RTLSDR_SET_BIAS_TEE
         " -b, --biastee           enable bias-tee voltage if supported by hardware\n"
+#endif
         " -e, --directsampling    enable direct sampling on the specified input\n"
         "                         (0 = disabled, 1 = I-input, 2 = Q-input)\n",
         VERSION
@@ -333,7 +337,9 @@ int main(int argc, char** argv) {
     bool agc = false;
     int gain = 0;
     int ppm = 0;
+#if HAS_RTLSDR_SET_BIAS_TEE
     bool biastee = false;
+#endif
     int directsampling = -1;
 
     struct sigaction sa;
@@ -355,7 +361,9 @@ int main(int argc, char** argv) {
         {"ppm", required_argument, NULL, 'P'},
         {"iqswap", no_argument, NULL, 'i'},
         {"rtltcp", no_argument, NULL, 'r'},
+#if HAS_RTLSDR_SET_BIAS_TEE
         {"biastee", no_argument, NULL, 'b'},
+#endif
         {"directsampling", required_argument, NULL, 'e'},
         { NULL, 0, NULL, 0 }
     };
@@ -398,9 +406,11 @@ int main(int argc, char** argv) {
             case 'r':
                 rtltcp_compat = true;
                 break;
+#if HAS_RTLSDR_SET_BIAS_TEE
             case 'b':
                 biastee = true;
                 break;
+#endif
             case 'e':
                 directsampling = (int)strtol(optarg, NULL, 10);
                 break;
@@ -461,10 +471,12 @@ int main(int argc, char** argv) {
         }
     }
 
+#if HAS_RTLSDR_SET_BIAS_TEE
     r = rtlsdr_set_bias_tee(dev, (int) biastee);
     if (r < 0) {
         fprintf(stderr, "setting biastee failed\n");
     }
+#endif
 
     if (directsampling >= 0 && directsampling <= 2) {
         r = rtlsdr_set_direct_sampling(dev, directsampling);

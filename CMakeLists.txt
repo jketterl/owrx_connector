@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.0)
 project (owrx-connector VERSION 0.2.0)
 
+include(CheckFunctionExists)
+
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
 find_package(Threads REQUIRED)
@@ -16,8 +18,16 @@ target_include_directories (version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 if (RTLSDR_FOUND)
     SET(RTL_LIBS ${LIBS} ${RTLSDR_LIBRARY})
     INCLUDE_DIRECTORIES("${RTLSDR_INCLUDE_DIRS}")
+
+    SET(CMAKE_REQUIRED_LIBRARIES ${RTLSDR_LIBRARY})
+    check_function_exists(rtlsdr_set_bias_tee HAS_RTLSDR_SET_BIAS_TEE)
+    UNSET(CMAKE_REQUIRED_LIBRARIES)
+
     add_executable(rtl_connector rtl_connector.c)
     target_link_libraries(rtl_connector version ${RTL_LIBS})
+    if (HAS_RTLSDR_SET_BIAS_TEE)
+        target_compile_definitions(rtl_connector PUBLIC HAS_RTLSDR_SET_BIAS_TEE)
+    endif()
     install(TARGETS rtl_connector DESTINATION bin)
 endif()
 
