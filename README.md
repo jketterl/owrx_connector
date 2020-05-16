@@ -18,6 +18,15 @@ connection to 8bit unsigned int, which is the default format of rtl_tcp.
 The connector does not evaluate any data on client connections, so rtl_tcp commands will be discarded. This means
 that applications using rtl_tcp compatibiltiy will not be able to control the SDR hardware.
 
+## CPU-Optimized builds
+
+This project can profit, to some extent, from loop vectorization, if your CPU supports it. The compiler optimization
+flags are disabled by default, but you can enable them by passing a custom build type argument to cmake:
+
+```
+cmake -DCMAKE_BUILD_TYPE=Optimized ..
+```
+
 ## Dependencies
 
 - If you want to work with rtlsdr devices, you will need to install the corresponding header files (on Debian:

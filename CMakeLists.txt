@@ -1,4 +1,14 @@
 cmake_minimum_required (VERSION 3.0)
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+SET(CMAKE_CXX_FLAGS_OPTIMIZED "-O3")
+SET(CMAKE_C_FLAGS_OPTIMIZED "-O3")
+SET(CMAKE_CXX_FLAGS_RELEASE "-g -O2")
+SET(CMAKE_C_FLAGS_RELEASE "-g -O2")
+
 project (owrx-connector VERSION 0.2.0)
 
 include(CheckFunctionExists)
@@ -8,7 +18,6 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 find_package(Threads REQUIRED)
 find_package(RTLSDR)
 find_package(SoapySDR "0.5")
-
 
 SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
@@ -42,9 +51,6 @@ endif()
 if (NOT RTLSDR_FOUND AND NOT SoapySDR_FOUND)
     message(SEND_ERROR "ERROR: Neither SoapySDR nor rtlsdr libraries have been found, there's nothing to build.")
 endif()
-
-SET(CMAKE_CXX_FLAGS "-O3")
-SET(CMAKE_C_FLAGS "-O3")
 
 SET(CPACK_GENERATOR "DEB")
 SET(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
