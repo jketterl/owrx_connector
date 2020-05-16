@@ -12,7 +12,7 @@ find_package(SoapySDR "0.5")
 
 SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
-add_library(version version.c)
+add_library(version STATIC version.c)
 target_include_directories (version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (RTLSDR_FOUND)
