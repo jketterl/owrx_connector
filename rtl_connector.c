@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include "version.h"
+#include "fmv.h"
 
 static rtlsdr_dev_t* dev = NULL;
 
@@ -93,6 +94,7 @@ uint32_t write_pos = 0;
 pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
 
+OWRX_CONNECTOR_TARGET_CLONES
 void convert_u8_cf32(unsigned char* in, float* out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {

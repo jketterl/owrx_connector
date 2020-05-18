@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include "version.h"
+#include "fmv.h"
 
 #if SOAPY_SDR_API_VERSION < 0x00060000
 #include <ctype.h>
@@ -204,6 +205,7 @@ uint32_t write_pos = 0;
 pthread_cond_t wait_condition;
 pthread_mutex_t wait_mutex;
 
+OWRX_CONNECTOR_TARGET_CLONES
 void convert_cs16_f(int16_t* restrict in, float* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
@@ -211,6 +213,7 @@ void convert_cs16_f(int16_t* restrict in, float* restrict out, uint32_t count) {
     }
 }
 
+OWRX_CONNECTOR_TARGET_CLONES
 void convert_cs16_u8(int16_t* restrict in, uint8_t* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
@@ -218,6 +221,7 @@ void convert_cs16_u8(int16_t* restrict in, uint8_t* restrict out, uint32_t count
     }
 }
 
+OWRX_CONNECTOR_TARGET_CLONES
 void convert_cf32_u8(float* restrict in, uint8_t* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
