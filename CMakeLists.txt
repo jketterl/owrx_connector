@@ -14,6 +14,10 @@ SET(CMAKE_C_FLAGS_RELEASE "-g -O2")
 project (owrx-connector VERSION 0.2.0)
 
 include(CheckFunctionExists)
+include(cmake/DetectIfunc.cmake)
+if (HAS_IFUNC)
+    add_definitions(-DOWRX_CONNECTOR_FMV)
+endif()
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 

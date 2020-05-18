@@ -1,0 +1,1 @@
+try_compile(HAS_IFUNC "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ifunc_test.c")
