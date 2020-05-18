@@ -6,8 +6,6 @@ endif()
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-O3 -fopt-info-vec")
 SET(CMAKE_C_FLAGS_DEBUG "-O3 -fopt-info-vec")
-SET(CMAKE_CXX_FLAGS_OPTIMIZED "-O3")
-SET(CMAKE_C_FLAGS_OPTIMIZED "-O3")
 SET(CMAKE_CXX_FLAGS_RELEASE "-g -O2")
 SET(CMAKE_C_FLAGS_RELEASE "-g -O2")
 
@@ -17,6 +15,8 @@ include(CheckFunctionExists)
 include(cmake/DetectIfunc.cmake)
 if (HAS_IFUNC)
     add_definitions(-DOWRX_CONNECTOR_FMV)
+    SET(CMAKE_CXX_FLAGS_RELEASE "-g -O3")
+    SET(CMAKE_C_FLAGS_RELEASE "-g -O3")
 endif()
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
