@@ -9,7 +9,7 @@ SET(CMAKE_C_FLAGS_DEBUG "-O3 -fopt-info-vec")
 SET(CMAKE_CXX_FLAGS_RELEASE "-g -O2")
 SET(CMAKE_C_FLAGS_RELEASE "-g -O2")
 
-project (owrx-connector VERSION 0.2.0)
+project (owrx-connector VERSION 0.3.0)
 
 include(CheckFunctionExists)
 include(cmake/DetectIfunc.cmake)
