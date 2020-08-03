@@ -14,12 +14,18 @@
 #include <ctype.h>
 #include "version.h"
 #include "fmv.h"
+#include "connector_params.h"
 
 static rtlsdr_dev_t* dev = NULL;
 
 bool global_run = true;
 bool iqswap = false;
 bool rtltcp_compat = false;
+
+typedef struct {
+    int port;
+    connector_params* params;
+} control_worker_args;
 
 int verbose_device_search(char *s)
 {
@@ -127,15 +133,85 @@ void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
     pthread_mutex_unlock(&wait_mutex);
 }
 
-void* iq_worker(void* arg) {
-    bool run = true;
+int setup_and_read(connector_params* params) {
     uint32_t buf_num = 2;
     int r;
-    while (run && global_run) {
-        r = rtlsdr_read_async(dev, rtlsdr_callback, NULL, buf_num, rtl_buffer_size);
-        if (r != 0) {
-            fprintf(stderr, "WARNING: rtlsdr_read_async failed with r = %i\n", r);
+    int rc = 0;
+    int dev_index = verbose_device_search(params->device_id);
+
+    if (dev_index < 0) {
+        fprintf(stderr, "no device found.\n");
+        return 1;
+    }
+
+    rtlsdr_open(&dev, (uint32_t)dev_index);
+    if (NULL == dev) {
+        fprintf(stderr, "device could not be opened\n");
+        return 2;
+    }
+
+    r = rtlsdr_set_sample_rate(dev, params->samp_rate);
+    if (r < 0) {
+        fprintf(stderr, "setting sample rate failed\n");
+        return 3;
+    }
+
+    r = rtlsdr_set_center_freq(dev, params->frequency);
+    if (r < 0) {
+        fprintf(stderr, "setting frequency failed\n");
+        return 4;
+    }
+
+    int gainmode = params->agc ? 0 : 1;
+    r = rtlsdr_set_tuner_gain_mode(dev, gainmode);
+    if (r < 0) {
+        fprintf(stderr, "setting gain mode failed\n");
+        return 5;
+    }
+
+    if (!params->agc) {
+        r = rtlsdr_set_tuner_gain(dev, params->gain);
+        if (r < 0) {
+            fprintf(stderr, "setting gain failed\n");
+            return 6;
         }
+    }
+
+    if (params->ppm != 0) {
+        r = rtlsdr_set_freq_correction(dev, params->ppm);
+        if (r < 0) {
+            fprintf(stderr, "setting ppm failed\n");
+            return 7;
+        }
+    }
+
+#if HAS_RTLSDR_SET_BIAS_TEE
+    r = rtlsdr_set_bias_tee(dev, (int) params->biastee);
+    if (r < 0) {
+        fprintf(stderr, "setting biastee failed\n");
+    }
+#endif
+
+    if (params->directsampling >= 0 && params->directsampling <= 2) {
+        r = rtlsdr_set_direct_sampling(dev, params->directsampling);
+        if (r < 0) {
+            fprintf(stderr, "setting direct sampling mode failed\n");
+        }
+    }
+
+    r = rtlsdr_reset_buffer(dev);
+    if (r < 0) {
+        fprintf(stderr, "WARNING: Failed to reset buffers.\n");
+    }
+
+    r = rtlsdr_read_async(dev, rtlsdr_callback, NULL, buf_num, rtl_buffer_size);
+    if (r != 0) {
+        fprintf(stderr, "WARNING: rtlsdr_read_async failed with r = %i\n", r);
+    }
+
+    r = rtlsdr_close(dev);
+    if (r != 0) {
+        fprintf(stderr, "WARNING: could not close device");
     }
 }
 
@@ -206,7 +282,11 @@ bool convertBooleanValue(char* value) {
 }
 
 void* control_worker(void* p) {
-    int port = *(int*) p;
+    control_worker_args* args = (control_worker_args*) p;
+    int port = args->port;
+    connector_params* params = args->params;
+    free(args);
+
     struct sockaddr_in local, remote;
     char* addr = "0.0.0.0";
     ssize_t read_bytes;
@@ -254,30 +334,33 @@ void* control_worker(void* p) {
                     char* value = strtok_r(NULL, ":", &pair_token);
                     int r = 0;
                     if (strcmp(key, "samp_rate") == 0) {
-                        uint32_t samp_rate = (uint32_t)strtoul(value, NULL, 10);
-                        r = rtlsdr_set_sample_rate(dev, samp_rate);
+                        params->samp_rate = (uint32_t)strtoul(value, NULL, 10);
+                        r = rtlsdr_set_sample_rate(dev, params->samp_rate);
                     } else if (strcmp(key, "center_freq") == 0) {
-                        uint32_t frequency = (uint32_t)strtoul(value, NULL, 10);
-                        r = rtlsdr_set_center_freq(dev, frequency);
+                        params->frequency = (uint32_t)strtoul(value, NULL, 10);
+                        r = rtlsdr_set_center_freq(dev, params->frequency);
                     } else if (strcmp(key, "ppm") == 0) {
-                        int ppm = atoi(value);
-                        r = rtlsdr_set_freq_correction(dev, ppm);
+                        params->ppm = atoi(value);
+                        r = rtlsdr_set_freq_correction(dev, params->ppm);
                     } else if (strcmp(key, "rf_gain") == 0) {
                         char* lower = strtolower(value);
                         if (strcmp(lower, "auto") == 0 || strcmp(lower, "none") == 0) {
+                            params->agc = true;
                             rtlsdr_set_tuner_gain_mode(dev, 0);
                         } else {
-                            int gain = (int)(atof(value) * 10); /* tenths of a dB */
-                            r = rtlsdr_set_tuner_gain(dev, gain);
+                            params->gain = (int)(atof(value) * 10); /* tenths of a dB */
+                            r = rtlsdr_set_tuner_gain(dev, params->gain);
                         }
                     } else if (strcmp(key, "iqswap") == 0) {
                         iqswap = convertBooleanValue(value);
 #if HAS_RTLSDR_SET_BIAS_TEE
                     } else if (strcmp(key, "bias_tee") == 0) {
-                        r = rtlsdr_set_bias_tee(dev, (int) convertBooleanValue(value));
+                        params->biastee = convertBooleanValue(value);
+                        r = rtlsdr_set_bias_tee(dev, (int) params->biastee);
 #endif
                     } else if (strcmp(key, "direct_sampling") == 0) {
-                        r = rtlsdr_set_direct_sampling(dev, (int)strtol(value, NULL, 10));
+                        params->directsampling = (int)strtol(value, NULL, 10);
+                        r = rtlsdr_set_direct_sampling(dev, params->directsampling);
                     } else {
                         fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
                     }
@@ -292,6 +375,35 @@ void* control_worker(void* p) {
             }
         }
         fprintf(stderr, "control connection ended\n");
+    }
+}
+
+void* iq_connection_worker(void* p) {
+    int port = *(int*) p;
+    int sock;
+    struct sockaddr_in local, remote;
+    char* addr = "0.0.0.0";
+
+    memset(&local, 0, sizeof(local));
+    local.sin_family = AF_INET;
+    local.sin_port = htons(port);
+    local.sin_addr.s_addr = inet_addr(addr);
+
+    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+    bind(sock, (struct sockaddr *)&local, sizeof(local));
+
+    fprintf(stderr, "socket setup complete, waiting for connections\n");
+
+    listen(sock, 1);
+    while (global_run) {
+        int rlen = sizeof(remote);
+        int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
+
+        if (client_sock >= 0) {
+            pthread_t client_worker_thread;
+            pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
+        }
     }
 }
 
@@ -330,19 +442,16 @@ int main(int argc, char** argv) {
     int r;
     int port = 4950;
     int control_port = -1;
-    char* device_id = "0";
-    int sock;
-    struct sockaddr_in local, remote;
-    char* addr = "127.0.0.1";
-    uint32_t frequency = 145000000;
-    uint32_t samp_rate = 2400000;
-    bool agc = false;
-    int gain = 0;
-    int ppm = 0;
-#if HAS_RTLSDR_SET_BIAS_TEE
-    bool biastee = false;
-#endif
-    int directsampling = -1;
+
+    connector_params* params = malloc(sizeof(connector_params));
+    params->device_id = "0";
+    params->frequency = 145000000;
+    params->samp_rate = 2400000;
+    params->agc = false;
+    params->gain = 0;
+    params->ppm = 0;
+    params->directsampling = -1;
+    params->biastee = false;
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -378,29 +487,29 @@ int main(int argc, char** argv) {
                 print_usage();
                 return 0;
             case 'd':
-                device_id = optarg;
+                params->device_id = optarg;
                 break;
             case 'p':
                 port = atoi(optarg);
                 break;
             case 'f':
-                frequency = (uint32_t)strtoul(optarg, NULL, 10);
+                params->frequency = (uint32_t)strtoul(optarg, NULL, 10);
                 break;
             case 's':
-                samp_rate = (uint32_t)strtoul(optarg, NULL, 10);
+                params->samp_rate = (uint32_t)strtoul(optarg, NULL, 10);
                 break;
             case 'g':
                 if (strcmp(strtolower(optarg), "auto") == 0) {
-                    agc = true;
+                    params->agc = true;
                 } else {
-                    gain = (int)(atof(optarg) * 10); /* tenths of a dB */
+                    params->gain = (int)(atof(optarg) * 10); /* tenths of a dB */
                 }
                 break;
             case 'c':
                 control_port = atoi(optarg);
                 break;
             case 'P':
-                ppm = atoi(optarg);
+                params->ppm = atoi(optarg);
                 break;
             case 'i':
                 iqswap = true;
@@ -410,11 +519,11 @@ int main(int argc, char** argv) {
                 break;
 #if HAS_RTLSDR_SET_BIAS_TEE
             case 'b':
-                biastee = true;
+                params->biastee = true;
                 break;
 #endif
             case 'e':
-                directsampling = (int)strtol(optarg, NULL, 10);
+                params->directsampling = (int)strtol(optarg, NULL, 10);
                 break;
         }
     }
@@ -425,105 +534,33 @@ int main(int argc, char** argv) {
     ringbuffer_f = (float*) malloc(sizeof(float) * ringbuffer_size);
     conversion_buffer = (unsigned char*) malloc(sizeof(unsigned char) * rtl_buffer_size);
 
-    int dev_index = verbose_device_search(device_id);
-
-    if (dev_index < 0) {
-        fprintf(stderr, "no device found.\n");
-        return 1;
-    }
-
-    rtlsdr_open(&dev, (uint32_t)dev_index);
-    if (NULL == dev) {
-        fprintf(stderr, "device could not be opened\n");
-        return 2;
-    }
-
-    r = rtlsdr_set_sample_rate(dev, samp_rate);
-    if (r < 0) {
-        fprintf(stderr, "setting sample rate failed\n");
-        return 3;
-    }
-
-    r = rtlsdr_set_center_freq(dev, frequency);
-    if (r < 0) {
-        fprintf(stderr, "setting frequency failed\n");
-        return 4;
-    }
-
-    int gainmode = agc ? 0 : 1;
-    r = rtlsdr_set_tuner_gain_mode(dev, gainmode);
-    if (r < 0) {
-        fprintf(stderr, "setting gain mode failed\n");
-        return 5;
-    }
-
-    if (!agc) {
-        r = rtlsdr_set_tuner_gain(dev, gain);
-        if (r < 0) {
-            fprintf(stderr, "setting gain failed\n");
-            return 6;
-        }
-    }
-
-    if (ppm != 0) {
-        r = rtlsdr_set_freq_correction(dev, ppm);
-        if (r < 0) {
-            fprintf(stderr, "setting ppm failed\n");
-            return 7;
-        }
-    }
-
-#if HAS_RTLSDR_SET_BIAS_TEE
-    r = rtlsdr_set_bias_tee(dev, (int) biastee);
-    if (r < 0) {
-        fprintf(stderr, "setting biastee failed\n");
-    }
-#endif
-
-    if (directsampling >= 0 && directsampling <= 2) {
-        r = rtlsdr_set_direct_sampling(dev, directsampling);
-        if (r < 0) {
-            fprintf(stderr, "setting direct sampling mode failed\n");
-        }
-    }
-
-    r = rtlsdr_reset_buffer(dev);
-    if (r < 0) {
-        fprintf(stderr, "WARNING: Failed to reset buffers.\n");
-    }
-
     pthread_cond_init(&wait_condition, NULL);
     pthread_mutex_init(&wait_mutex, NULL);
 
-    pthread_t iq_worker_thread;
-    pthread_create(&iq_worker_thread, NULL, iq_worker, NULL);
-
-    fprintf(stderr, "IQ worker thread started\n");
-
     if (control_port > 0) {
+        control_worker_args* args = malloc(sizeof(control_worker_args));
+        args->port = control_port;
+        args->params = params;
         pthread_t control_worker_thread;
-        pthread_create(&control_worker_thread, NULL, control_worker, &control_port);
+        pthread_create(&control_worker_thread, NULL, control_worker, args);
     }
 
-    memset(&local, 0, sizeof(local));
-    local.sin_family = AF_INET;
-    local.sin_port = htons(port);
-    local.sin_addr.s_addr = inet_addr(addr);
+    pthread_t iq_connection_worker_thread;
+    pthread_create(&iq_connection_worker_thread, NULL, iq_connection_worker, &port);
 
-    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
-    bind(sock, (struct sockaddr *)&local, sizeof(local));
-
-    fprintf(stderr, "socket setup complete, waiting for connections\n");
-
-    listen(sock, 1);
     while (global_run) {
-        int rlen = sizeof(remote);
-        int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
-
-        if (client_sock >= 0) {
-            pthread_t client_worker_thread;
-            pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
+        int r = setup_and_read(params);
+        if (r != 0) {
+            global_run = false;
+        } else if (global_run) {
+            // give the system 5 seconds to recover
+            sleep(5);
         }
     }
+
+    global_run = false;
+    void* retval;
+
+    pthread_kill(iq_connection_worker_thread, SIGINT);
+    pthread_join(iq_connection_worker_thread, retval);
 }
