@@ -15,6 +15,7 @@
 #include "version.h"
 #include "fmv.h"
 #include "connector_params.h"
+#include "shims.h"
 
 static rtlsdr_dev_t* dev = NULL;
 
