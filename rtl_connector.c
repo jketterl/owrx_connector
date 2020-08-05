@@ -382,7 +382,7 @@ void* iq_connection_worker(void* p) {
     int port = *(int*) p;
     int sock;
     struct sockaddr_in local, remote;
-    char* addr = "0.0.0.0";
+    char* addr = "127.0.0.1";
 
     memset(&local, 0, sizeof(local));
     local.sin_family = AF_INET;
