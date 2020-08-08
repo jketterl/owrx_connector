@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include "version.h"
 #include "fmv.h"
+#include "shims.h"
 
 #if SOAPY_SDR_API_VERSION < 0x00060000
 #include <ctype.h>
