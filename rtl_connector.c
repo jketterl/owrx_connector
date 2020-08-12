@@ -24,8 +24,8 @@ bool iqswap = false;
 bool rtltcp_compat = false;
 
 typedef struct {
-    int port;
     connector_params* params;
+    int socket;
 } control_worker_args;
 
 int verbose_device_search(char *s)
@@ -284,26 +284,11 @@ bool convertBooleanValue(char* value) {
 
 void* control_worker(void* p) {
     control_worker_args* args = (control_worker_args*) p;
-    int port = args->port;
     connector_params* params = args->params;
+    int listen_sock = args->socket;
     free(args);
-
-    struct sockaddr_in local, remote;
-    char* addr = "0.0.0.0";
+    struct sockaddr_in remote;
     ssize_t read_bytes;
-
-    fprintf(stderr, "setting up control socket...\n");
-
-    memset(&local, 0, sizeof(local));
-    local.sin_family = AF_INET;
-    local.sin_port = htons(port);
-    local.sin_addr.s_addr = inet_addr(addr);
-
-    int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
-    bind(listen_sock, (struct sockaddr *)&local, sizeof(local));
-
-    fprintf(stderr, "control socket started on %i\n", port);
 
     listen(listen_sock, 1);
     while (global_run) {
@@ -539,8 +524,24 @@ int main(int argc, char** argv) {
     pthread_mutex_init(&wait_mutex, NULL);
 
     if (control_port > 0) {
+        struct sockaddr_in local;
+        char* addr = "0.0.0.0";
+
+        fprintf(stderr, "setting up control socket...\n");
+
+        memset(&local, 0, sizeof(local));
+        local.sin_family = AF_INET;
+        local.sin_port = htons(control_port);
+        local.sin_addr.s_addr = inet_addr(addr);
+
+        int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+        bind(listen_sock, (struct sockaddr *)&local, sizeof(local));
+
+        fprintf(stderr, "control socket started on %i\n", port);
+
         control_worker_args* args = malloc(sizeof(control_worker_args));
-        args->port = control_port;
+        args->socket = listen_sock;
         args->params = params;
         pthread_t control_worker_thread;
         pthread_create(&control_worker_thread, NULL, control_worker, args);
