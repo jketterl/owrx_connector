@@ -290,7 +290,6 @@ void* control_worker(void* p) {
     struct sockaddr_in remote;
     ssize_t read_bytes;
 
-    listen(listen_sock, 1);
     while (global_run) {
         int rlen = sizeof(remote);
         int sock = accept(listen_sock, (struct sockaddr *)&remote, &rlen);
@@ -537,6 +536,7 @@ int main(int argc, char** argv) {
         int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
         bind(listen_sock, (struct sockaddr *)&local, sizeof(local));
+        listen(listen_sock, 1);
 
         fprintf(stderr, "control socket started on %i\n", port);
 
