@@ -384,15 +384,17 @@ int setup_and_read(soapy_connector_params* params) {
             pthread_mutex_lock(&wait_mutex);
             pthread_cond_broadcast(&wait_condition);
             pthread_mutex_unlock(&wait_mutex);
+        } else if (samples_read == SOAPY_SDR_OVERFLOW) {
+            // overflows do happen, they are non-fatal. a warning should do
+            fprintf(stderr, "WARNING: Soapy overflow\n");
+        } else if (samples_read == SOAPY_SDR_TIMEOUT) {
+            // timeout should not break the read loop.
+            // TODO or should they? I tried, but airspyhf devices will end up here on sample rate changes.
+            fprintf(stderr, "WARNING: SoapySDRDevice_readStream timeout!\n");
         } else {
-            if (samples_read == SOAPY_SDR_OVERFLOW) {
-                // overflows do happen, they are non-fatal. a warning should do
-                fprintf(stderr, "WARNING: Soapy overflow\n");
-            } else {
-                // other errors should break the read loop.
-                fprintf(stderr, "ERROR: Soapy error %i\n", samples_read);
-                break;
-            }
+            // other errors should break the read loop.
+            fprintf(stderr, "ERROR: Soapy error %i\n", samples_read);
+            break;
         }
     }
 
