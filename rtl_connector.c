@@ -24,7 +24,7 @@ bool iqswap = false;
 bool rtltcp_compat = false;
 
 typedef struct {
-    connector_params* params;
+    rtl_connector_params* params;
     int socket;
 } control_worker_args;
 
@@ -134,10 +134,9 @@ void rtlsdr_callback(unsigned char* buf, uint32_t len, void* ctx) {
     pthread_mutex_unlock(&wait_mutex);
 }
 
-int setup_and_read(connector_params* params) {
+int setup_and_read(rtl_connector_params* params) {
     uint32_t buf_num = 2;
     int r;
-    int rc = 0;
     int dev_index = verbose_device_search(params->device_id);
 
     if (dev_index < 0) {
@@ -284,7 +283,7 @@ bool convertBooleanValue(char* value) {
 
 void* control_worker(void* p) {
     control_worker_args* args = (control_worker_args*) p;
-    connector_params* params = args->params;
+    rtl_connector_params* params = args->params;
     int listen_sock = args->socket;
     free(args);
     struct sockaddr_in remote;
@@ -382,7 +381,7 @@ void* iq_connection_worker(void* p) {
 
     listen(sock, 1);
     while (global_run) {
-        int rlen = sizeof(remote);
+        unsigned int rlen = sizeof(remote);
         int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
 
         if (client_sock >= 0) {
@@ -424,11 +423,10 @@ void print_usage() {
 
 int main(int argc, char** argv) {
     int c;
-    int r;
     int port = 4950;
     int control_port = -1;
 
-    connector_params* params = malloc(sizeof(connector_params));
+    rtl_connector_params* params = malloc(sizeof(rtl_connector_params));
     params->device_id = "0";
     params->frequency = 145000000;
     params->samp_rate = 2400000;
@@ -524,7 +522,7 @@ int main(int argc, char** argv) {
 
     if (control_port > 0) {
         struct sockaddr_in local;
-        char* addr = "0.0.0.0";
+        char* addr = "127.0.0.1";
 
         fprintf(stderr, "setting up control socket...\n");
 
@@ -561,7 +559,7 @@ int main(int argc, char** argv) {
     }
 
     global_run = false;
-    void* retval;
+    void* retval = NULL;
 
     pthread_kill(iq_connection_worker_thread, SIGINT);
     pthread_join(iq_connection_worker_thread, retval);

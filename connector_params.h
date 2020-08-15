@@ -10,6 +10,16 @@ typedef struct {
     int ppm;
     int directsampling;
     bool biastee;
-} connector_params;
+} rtl_connector_params;
+
+typedef struct {
+    char* device_id;
+    double frequency;
+    double samp_rate;
+    char* gain;
+    int ppm;
+    char* antenna;
+    char* settings;
+} soapy_connector_params;
 
 #endif
