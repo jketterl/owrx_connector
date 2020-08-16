@@ -326,7 +326,7 @@ void sighandler(int signo) {
 void print_usage() {
     fprintf(stderr,
         "rtl_tcp_connector version %s\n\n"
-        "Usage: rtl_connector [options] host[:port]\n\n"
+        "Usage: rtl_tcp_connector [options] [host[:port]]\n\n"
         "Available options:\n"
         " -h, --help              show this message\n"
         " -v, --version           print version and exit\n"
