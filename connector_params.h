@@ -22,4 +22,17 @@ typedef struct {
     char* settings;
 } soapy_connector_params;
 
+typedef struct {
+    char* host;
+    int port;
+    int socket;
+    unsigned int frequency;
+    unsigned int samp_rate;
+    bool agc;
+    unsigned int gain;
+    unsigned int ppm;
+    unsigned int directsampling;
+    bool biastee;
+} rtl_tcp_connector_params;
+
 #endif
