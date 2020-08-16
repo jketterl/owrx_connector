@@ -11,22 +11,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <ctype.h>
 #include "version.h"
 #include "fmv.h"
 #include "connector_params.h"
 #include "shims.h"
+#include "control_worker_args.h"
+#include "strtolower.h"
 
 static rtlsdr_dev_t* dev = NULL;
 
 bool global_run = true;
 bool iqswap = false;
 bool rtltcp_compat = false;
-
-typedef struct {
-    rtl_connector_params* params;
-    int socket;
-} control_worker_args;
 
 int verbose_device_search(char *s)
 {
@@ -264,16 +260,6 @@ void* client_worker(void* s) {
     }
     fprintf(stderr, "closing client socket\n");
     close(client_sock);
-}
-
-char* strtolower(char* input) {
-    int i, s = strlen(input);
-    char* lower = malloc(sizeof(char) * (s + 1));
-    for (i = 0; i < s; i++) {
-        lower[i] = tolower(input[i]);
-    }
-    lower[s] = 0;
-    return lower;
 }
 
 bool convertBooleanValue(char* value) {

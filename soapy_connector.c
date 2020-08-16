@@ -13,11 +13,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <ctype.h>
 #include "version.h"
 #include "fmv.h"
 #include "connector_params.h"
 #include "shims.h"
+#include "control_worker_args.h"
+#include "strtolower.h"
 
 #if SOAPY_SDR_API_VERSION < 0x00060000
 #include <ctype.h>
@@ -29,11 +30,6 @@ size_t channel = 0;
 bool global_run = true;
 bool iqswap = false;
 bool rtltcp_compat = false;
-
-typedef struct {
-    soapy_connector_params* params;
-    int socket;
-} control_worker_args;
 
 #if SOAPY_SDR_API_VERSION < 0x00060000
 char *trimwhitespace(char *str)
@@ -110,16 +106,6 @@ int verbose_device_search(char *s, SoapySDRDevice **devOut)
 
     *devOut = dev;
     return 0;
-}
-
-char* strtolower(char* input) {
-    int i, s = strlen(input);
-    char* lower = malloc(sizeof(char) * (s + 1));
-    for (i = 0; i < s; i++) {
-        lower[i] = tolower(input[i]);
-    }
-    lower[s] = 0;
-    return lower;
 }
 
 bool convertBooleanValue(char* value) {
@@ -402,6 +388,9 @@ int setup_and_read(soapy_connector_params* params) {
     SoapySDRDevice_closeStream(dev, stream);
     SoapySDRDevice_unmake(dev);
     fprintf(stderr, "device closed\n");
+
+    free(buf);
+    free(conversion_buffer);
 
     return 0;
 }
