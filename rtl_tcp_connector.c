@@ -90,7 +90,7 @@ int setup_and_read(rtl_tcp_connector_params* params) {
     }
     send_command(params->socket, (struct command) {0x0e, htonl((unsigned int) params->biastee)});
 
-    uint32_t bytes_read;
+    ssize_t bytes_read;
     while (global_run) {
         bytes_read = read(params->socket, buf, RTL_BUFFER_SIZE);
         if (bytes_read > 0) {
