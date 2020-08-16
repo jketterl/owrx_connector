@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <netdb.h>
 #include "version.h"
 #include "fmv.h"
 #include "connector_params.h"
@@ -58,6 +59,12 @@ int send_command(int socket, struct command cmd) {
 int setup_and_read(rtl_tcp_connector_params* params) {
     unsigned char* buf = malloc(RTL_BUFFER_SIZE);
 
+    struct hostent* hp = gethostbyname(params->host);
+    if (hp == NULL) {
+        fprintf(stderr, "gethostbyname() failed\n");
+        return 3;
+    }
+
     int sock;
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         fprintf(stderr, "rtl_tcp socket creation error: %i\n", sock);
@@ -70,7 +77,7 @@ int setup_and_read(rtl_tcp_connector_params* params) {
     memset(&remote, 0, sizeof(remote));
     remote.sin_family = AF_INET;
     remote.sin_port = htons(params->port);
-    remote.sin_addr.s_addr = inet_addr(params->host);
+    remote.sin_addr = *((struct in_addr *) hp->h_addr);
 
     if (connect(params->socket, (struct sockaddr *)&remote, sizeof(remote)) < 0) {
         fprintf(stderr, "rtl_tcp connection failed\n");
@@ -420,6 +427,17 @@ int main(int argc, char** argv) {
             case 'e':
                 params->directsampling = (int)strtol(optarg, NULL, 10);
                 break;
+        }
+    }
+    if (argc - optind >= 2) {
+        params->host = argv[optind];
+        params->port = (unsigned int) strtoul(argv[optind + 1], NULL, 10);
+    } else if (optind < argc) {
+        char* saveptr;
+        params->host = strtok_r(argv[optind], ":", &saveptr);
+        char* port = strtok_r(NULL, ":", &saveptr);
+        if (port != NULL) {
+            params->port = (unsigned int) strtoul(port, NULL, 10);
         }
     }
 

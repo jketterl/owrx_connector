@@ -24,7 +24,7 @@ typedef struct {
 
 typedef struct {
     char* host;
-    int port;
+    unsigned int port;
     int socket;
     unsigned int frequency;
     unsigned int samp_rate;
