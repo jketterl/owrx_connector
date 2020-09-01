@@ -372,7 +372,16 @@ void* iq_connection_worker(void* p) {
 
         if (client_sock >= 0) {
             pthread_t client_worker_thread;
-            pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
+            int r = pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
+            if (r != 0) {
+                fprintf(stderr, "WARNING: could not create client worker thread: %i\n", r);
+		continue;
+            }
+            r = pthread_detach(client_worker_thread);
+            if (r != 0) {
+                fprintf(stderr, "WARNING: could not detach client worker thread: %i\n", r);
+                continue;
+            }
         }
     }
 }
