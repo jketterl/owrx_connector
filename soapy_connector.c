@@ -414,7 +414,7 @@ void* client_worker(void* s) {
     int sample_size = sizeof(float);
     int available;
 
-    fprintf(stderr, "client connection establised\n");
+    fprintf(stderr, "client connection established\n");
     while (run && global_run) {
         pthread_mutex_lock(&wait_mutex);
         pthread_cond_wait(&wait_condition, &wait_mutex);
