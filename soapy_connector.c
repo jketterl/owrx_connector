@@ -540,13 +540,13 @@ void* control_worker(void* p) {
                         params->ppm = atoi(value);
                         push_modification(modified, MODIFIED_PPM, modification_mutex);
                     } else if (strcmp(key, "rf_gain") == 0) {
-                        params->gain = value;
+                        strcpy(params->gain, value);
                         push_modification(modified, MODIFIED_GAIN, modification_mutex);
                     } else if (strcmp(key, "antenna") == 0) {
-                        params->antenna = value;
+                        strcpy(params->antenna, value);
                         push_modification(modified, MODIFIED_ANTENNA, modification_mutex);
                     } else if (strcmp(key, "settings") == 0) {
-                        params->settings = value;
+                        strcpy(params->settings, value);
                         push_modification(modified, MODIFIED_SETTINGS, modification_mutex);
                     } else if (strcmp(key, "iqswap") == 0) {
                         // this one can go straight through since it's not a device setting
@@ -642,10 +642,13 @@ int main(int argc, char** argv) {
     params->device_id = "0";
     params->frequency = 145000000;
     params->samp_rate = 2048000;
-    params->gain = "";
+    params->gain = malloc(sizeof(char) * 255);
+    strcpy(params->gain, "");
     params->ppm = 0;
-    params->antenna = "";
-    params->settings = "";
+    params->antenna = malloc(sizeof(char) * 255);
+    strcpy(params->antenna, "");
+    params->settings = malloc(sizeof(char) * 255);
+    strcpy(params->settings, "");
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -691,7 +694,7 @@ int main(int argc, char** argv) {
                 params->samp_rate = strtod(optarg, NULL);
                 break;
             case 'g':
-                params->gain = optarg;
+                strcpy(params->gain, optarg);
                 break;
             case 'c':
                 control_port = atoi(optarg);
@@ -700,13 +703,13 @@ int main(int argc, char** argv) {
                 params->ppm = atoi(optarg);
                 break;
             case 'a':
-                params->antenna = optarg;
+                strcpy(params->antenna, optarg);
                 break;
             case 'i':
                 iqswap = true;
                 break;
             case 't':
-                params->settings = optarg;
+                strcpy(params->settings, optarg);
                 break;
             case 'r':
                 rtltcp_compat = true;
