@@ -222,7 +222,7 @@ void convert_cf32_u8(float* restrict in, uint8_t* restrict out, uint32_t count) 
     }
 }
 
-int setup_and_read(soapy_connector_params* params) {
+int setup_and_read(soapy_connector_params* params, uint16_t* modified, pthread_mutex_t modification_mutex) {
     int r;
 
     r = verbose_device_search(params->device_id, &dev);
@@ -370,6 +370,43 @@ int setup_and_read(soapy_connector_params* params) {
             pthread_mutex_lock(&wait_mutex);
             pthread_cond_broadcast(&wait_condition);
             pthread_mutex_unlock(&wait_mutex);
+
+            pthread_mutex_lock(&modification_mutex);
+            if (*modified > 0) {
+                int r = 0;
+                // perform device modifications here
+                if (*modified & MODIFIED_SAMPLE_RATE) {
+                    r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, channel, params->samp_rate);
+                    if (r != 0) fprintf(stderr, "WARNING: setting sample rate failed: %i\n", r);
+                }
+                if (*modified & MODIFIED_FREQUENCY) {
+                    SoapySDRKwargs args = {0};
+                    r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, channel, params->frequency, &args);
+                    if (r != 0) fprintf(stderr, "WARNING: setting frequency failed: %i\n", r);
+                }
+                if (*modified & MODIFIED_PPM) {
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
+                    r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, channel, params->ppm);
+#else
+                    SoapySDRKwargs args = {0};
+                    r = SoapySDRDevice_setFrequencyComponent(dev, SOAPY_SDR_RX, channel, "CORR", params->ppm, &args);
+#endif
+                    if (r != 0) fprintf(stderr, "WARNING: setting ppm failed: %i\n", r);
+                }
+                if (*modified & MODIFIED_GAIN) {
+                    r = verbose_gain_str_set(dev, params->gain, channel);
+                    if (r != 0) fprintf(stderr, "WARNING: setting gain failed: %i\n", r);
+                }
+                if (*modified & MODIFIED_ANTENNA) {
+                    r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, params->antenna);
+                    if (r != 0) fprintf(stderr, "WARNING: setting antanna failed: %i\n", r);
+                }
+                if (*modified & MODIFIED_SETTINGS) {
+                    verbose_settings_set(dev, params->settings);
+                }
+                *modified = 0;
+            }
+            pthread_mutex_unlock(&modification_mutex);
         } else if (samples_read == SOAPY_SDR_OVERFLOW) {
             // overflows do happen, they are non-fatal. a warning should do
             fprintf(stderr, "WARNING: Soapy overflow\n");
@@ -449,10 +486,18 @@ void* client_worker(void* s) {
     return NULL;
 }
 
+void push_modification(uint16_t* modified, int new_modification, pthread_mutex_t mutex) {
+    pthread_mutex_lock(&mutex);
+    *modified |= new_modification;
+    pthread_mutex_unlock(&mutex);
+}
+
 void* control_worker(void* p) {
     control_worker_args* args = (control_worker_args*) p;
     soapy_connector_params* params = args->params;
     int listen_sock = args->socket;
+    uint16_t* modified = args->modified;
+    pthread_mutex_t modification_mutex = args->modification_mutex;
     free(args);
 
     struct sockaddr_in remote;
@@ -485,38 +530,29 @@ void* control_worker(void* p) {
                     char* pair_token;
                     char* key = strtok_r(pair, ":", &pair_token);
                     char* value = strtok_r(NULL, ":", &pair_token);
-                    int r = 0;
                     if (strcmp(key, "samp_rate") == 0) {
                         params->samp_rate = strtod(value, NULL);
-                        r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, channel, params->samp_rate);
+                        push_modification(modified, MODIFIED_SAMPLE_RATE, modification_mutex);
                     } else if (strcmp(key, "center_freq") == 0) {
                         params->frequency = strtod(value, NULL);
-                        SoapySDRKwargs args = {0};
-                        r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, channel, params->frequency, &args);
+                        push_modification(modified, MODIFIED_FREQUENCY, modification_mutex);
                     } else if (strcmp(key, "ppm") == 0) {
                         params->ppm = atoi(value);
-#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
-                        r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, channel, params->ppm);
-#else
-                        SoapySDRKwargs args = {0};
-                        r = SoapySDRDevice_setFrequencyComponent(dev, SOAPY_SDR_RX, channel, "CORR", params->ppm, &args);
-#endif
+                        push_modification(modified, MODIFIED_PPM, modification_mutex);
                     } else if (strcmp(key, "rf_gain") == 0) {
                         params->gain = value;
-                        r = verbose_gain_str_set(dev, params->gain, channel);
+                        push_modification(modified, MODIFIED_GAIN, modification_mutex);
                     } else if (strcmp(key, "antenna") == 0) {
                         params->antenna = value;
-                        r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, params->antenna);
-                    } else if (strcmp(key, "iqswap") == 0) {
-                        iqswap = convertBooleanValue(value);
+                        push_modification(modified, MODIFIED_ANTENNA, modification_mutex);
                     } else if (strcmp(key, "settings") == 0) {
                         params->settings = value;
-                        verbose_settings_set(dev, params->settings);
+                        push_modification(modified, MODIFIED_SETTINGS, modification_mutex);
+                    } else if (strcmp(key, "iqswap") == 0) {
+                        // this one can go straight through since it's not a device setting
+                        iqswap = convertBooleanValue(value);
                     } else {
                         fprintf(stderr, "could not set unknown key: \"%s\"\n", key);
-                    }
-                    if (r != 0) {
-                        fprintf(stderr, "WARNING: setting %s failed: %i\n", key, r);
                     }
                     free(pair);
 
@@ -686,6 +722,10 @@ int main(int argc, char** argv) {
     pthread_cond_init(&wait_condition, NULL);
     pthread_mutex_init(&wait_mutex, NULL);
 
+    pthread_mutex_t modification_mutex;
+    pthread_mutex_init(&modification_mutex, NULL);
+    uint16_t modified = 0;
+
     if (control_port > 0) {
         struct sockaddr_in local;
         char* addr = "127.0.0.1";
@@ -708,6 +748,8 @@ int main(int argc, char** argv) {
         control_worker_args* args = malloc(sizeof(control_worker_args));
         args->socket = listen_sock;
         args->params = params;
+        args->modified = &modified;
+        args->modification_mutex = modification_mutex;
         pthread_t control_worker_thread;
         pthread_create(&control_worker_thread, NULL, control_worker, args);
     }
@@ -716,7 +758,7 @@ int main(int argc, char** argv) {
     pthread_create(&iq_connection_worker_thread, NULL, iq_connection_worker, &port);
 
     while (global_run) {
-        int r = setup_and_read(params);
+        int r = setup_and_read(params, &modified, modification_mutex);
         if (r != 0) {
             global_run = false;
         } else if (global_run) {
