@@ -230,6 +230,12 @@ int setup_and_read(soapy_connector_params* params, uint16_t* modified, pthread_m
         return 1;
     }
 
+    r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, params->antenna);
+    if (r < 0) {
+        fprintf(stderr, "setting antenna failed\n");
+        return 8;
+    }
+
     r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, channel, params->samp_rate);
     if (r < 0) {
         fprintf(stderr, "setting sample rate failed\n");
@@ -256,12 +262,6 @@ int setup_and_read(soapy_connector_params* params, uint16_t* modified, pthread_m
             fprintf(stderr, "setting ppm failed\n");
             return 7;
         }
-    }
-
-    r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, params->antenna);
-    if (r < 0) {
-        fprintf(stderr, "setting antenna failed\n");
-        return 8;
     }
 
     if (strlen(params->settings) > 0) {
@@ -375,6 +375,11 @@ int setup_and_read(soapy_connector_params* params, uint16_t* modified, pthread_m
             if (*modified > 0) {
                 int r = 0;
                 // perform device modifications here
+                // antenna comes first since sdrplay is switching tuners that way
+                if (*modified & MODIFIED_ANTENNA) {
+                    r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, params->antenna);
+                    if (r != 0) fprintf(stderr, "WARNING: setting antanna failed: %i\n", r);
+                }
                 if (*modified & MODIFIED_SAMPLE_RATE) {
                     r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, channel, params->samp_rate);
                     if (r != 0) fprintf(stderr, "WARNING: setting sample rate failed: %i\n", r);
@@ -396,10 +401,6 @@ int setup_and_read(soapy_connector_params* params, uint16_t* modified, pthread_m
                 if (*modified & MODIFIED_GAIN) {
                     r = verbose_gain_str_set(dev, params->gain, channel);
                     if (r != 0) fprintf(stderr, "WARNING: setting gain failed: %i\n", r);
-                }
-                if (*modified & MODIFIED_ANTENNA) {
-                    r = SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, channel, params->antenna);
-                    if (r != 0) fprintf(stderr, "WARNING: setting antanna failed: %i\n", r);
                 }
                 if (*modified & MODIFIED_SETTINGS) {
                     verbose_settings_set(dev, params->settings);
