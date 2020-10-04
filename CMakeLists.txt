@@ -55,7 +55,7 @@ if (SoapySDR_FOUND)
 endif()
 
 if (NOT RTLSDR_FOUND AND NOT SoapySDR_FOUND)
-    message(SEND_ERROR "ERROR: Neither SoapySDR nor rtlsdr libraries have been found, there's nothing to build.")
+    message(WARNING "WARNING: Neither SoapySDR nor rtlsdr libraries have been found, only rtl_tcp_conector will be built.")
 endif()
 
 add_executable(rtl_tcp_connector rtl_tcp_connector.c strtolower.c)
