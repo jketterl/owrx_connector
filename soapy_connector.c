@@ -270,11 +270,14 @@ int setup_and_read(soapy_connector_params* params, uint16_t* modified, pthread_m
 
 
     char* format = SOAPY_SDR_CS16;
-    double fullscale;
-    char* native_format = SoapySDRDevice_getNativeStreamFormat(dev, SOAPY_SDR_RX, channel, &fullscale);
+    size_t length;
+    char** formats = SoapySDRDevice_getStreamFormats(dev, SOAPY_SDR_RX, channel, &length);
     // use native CF32 if available
-    if (strcmp(native_format, SOAPY_SDR_CF32) == 0) {
-        format = SOAPY_SDR_CF32;
+    for (unsigned int i = 0; i < length; i++) {
+        if(strcmp(formats[i], SOAPY_SDR_CF32) == 0) {
+            fprintf(stderr, "using soapy f32 conversion\n");
+            format = SOAPY_SDR_CF32;
+        }
     }
     SoapySDRStream* stream = NULL;
     void* buf = malloc(soapy_buffer_size * SoapySDR_formatToSize(format));
