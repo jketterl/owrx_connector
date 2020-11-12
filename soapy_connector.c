@@ -218,7 +218,7 @@ OWRX_CONNECTOR_TARGET_CLONES
 void convert_cf32_u8(float* restrict in, uint8_t* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
-        out[i] = in[i] * 128.0 + 127.4;
+        out[i] = in[i] * UCHAR_MAX * 0.5 + 128;
     }
 }
 
