@@ -6,6 +6,8 @@
 
 Connector::Connector(Handler* new_handler) {
     handler = new_handler;
+    float_buffer = new Ringbuffer<float>(10 * handler->get_buffer_size());
+    handler->set_buffers(float_buffer);
 }
 
 int Connector::main(int argc, char** argv) {
@@ -68,7 +70,7 @@ int Connector::get_arguments(int argc, char** argv) {
                 ppm = atoi(optarg);
                 break;
             case 'i':
-                // TODO implement iq swap
+                handler->set_iqswap(true);
                 break;
             case 'r':
                 // TODO implement rtl_tcp compat
@@ -129,16 +131,24 @@ int Connector::setup_and_read() {
 
     // TODO gain
     // return code 5 reserved for gain fail
+
+    r = handler->set_iqswap(iqswap);
+    if (r != 0) {
+        fprintf(stderr, "setting iqswap failed\n");
+        return 6;
+    }
+
     r = handler->read();
     if (r != 0) {
         fprintf(stderr, "Handler::read() failed\n");
-        return 2;
+        return 100;
     }
+
 
     r = handler->close();
     if (r != 0) {
         fprintf(stderr, "Handler::close() failed\n");
-        return 7;
+        return 101;
     }
 
     return 0;

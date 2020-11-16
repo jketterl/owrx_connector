@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ringbuffer.hpp"
 #include <stdint.h>
 
 class Handler {
@@ -13,4 +14,7 @@ class Handler {
         // TODO introduce gainspec
         virtual int set_gain() = 0;
         virtual int set_ppm(int ppm) = 0;
+        virtual int set_iqswap(bool iqswap) = 0;
+        virtual uint32_t get_buffer_size() = 0;
+        virtual void set_buffers(Ringbuffer<float>* float_buffer) = 0;
 };

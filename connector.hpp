@@ -1,6 +1,7 @@
 #pragma once
 
 #include "handler.hpp"
+#include "ringbuffer.hpp"
 
 class Connector {
     public:
@@ -13,6 +14,9 @@ class Connector {
         double center_frequency;
         double sample_rate;
         int32_t ppm;
+        bool iqswap = false;
+        Ringbuffer<float>* float_buffer;
+
         int get_arguments(int argc, char** argv);
         void print_usage(char* program);
         void print_version();

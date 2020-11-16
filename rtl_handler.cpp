@@ -1,11 +1,10 @@
 #include "rtl_handler.hpp"
+extern "C" {
+#include "conversions.h"
+}
 #include <cstdio>
 #include <cstring>
 #include <stdlib.h>
-
-// this should be the default according to rtl-sdr.h
-#define RTL_BUFFER_SIZE 16 * 32 * 512
-uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
 
 void RtlHandler::set_device(char* new_device) {
     device_id = new_device;
@@ -63,7 +62,28 @@ int RtlHandler::read() {
 }
 
 void RtlHandler::callback(unsigned char* buf, uint32_t len) {
-    fprintf(stderr, "received %i bytes\n", len);
+    if (len != rtl_buffer_size) {
+        fprintf(stderr, "WARNING: invalid buffer size received; skipping input\n");
+        return;
+    }
+    uint8_t* source = (uint8_t*) buf;
+    if (iqswap) {
+        source = conversion_buffer;
+        uint32_t i;
+        for (i = 0; i < len; i++) {
+            source[i] = buf[i ^ 1];
+        }
+    }
+    convert_u8_f32(source, float_buffer->get_write_pointer(), len);
+    //if (rtltcp_compat) {
+    //    memcpy(ringbuffer_u8 + write_pos, source, len);
+    //}
+
+    //write_pos += len;
+    //if (write_pos >= ringbuffer_size) write_pos = 0;
+    //pthread_mutex_lock(&wait_mutex);
+    //pthread_cond_broadcast(&wait_condition);
+    //pthread_mutex_unlock(&wait_mutex);
 }
 
 int RtlHandler::close() {
@@ -164,3 +184,16 @@ int RtlHandler::set_ppm(int32_t ppm) {
 
     return rtlsdr_set_freq_correction(dev, ppm);
 };
+
+int RtlHandler::set_iqswap(bool new_iqswap) {
+    iqswap = new_iqswap;
+    return 0;
+}
+
+uint32_t RtlHandler::get_buffer_size() {
+    return rtl_buffer_size;
+}
+
+void RtlHandler::set_buffers(Ringbuffer<float>* new_float_buffer) {
+    float_buffer = new_float_buffer;
+}
