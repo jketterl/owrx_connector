@@ -2,6 +2,7 @@
 #include "version.h"
 #include <cstdio>
 #include <getopt.h>
+#include <stdlib.h>
 
 Connector::Connector(Handler* new_handler) {
     handler = new_handler;
@@ -15,7 +16,7 @@ int Connector::main(int argc, char** argv) {
     } else if (r != 0) {
         return 1;
     }
-    handler->setup_and_read();
+    setup_and_read();
     return 0;
 }
 
@@ -37,7 +38,7 @@ int Connector::get_arguments(int argc, char** argv) {
     };
 
     int c;
-    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:irbe:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "vhd:p:f:s:g:c:P:ir:", long_options, NULL)) != -1) {
         switch (c) {
             case 'h':
                 print_usage(argv[0]);
@@ -45,6 +46,33 @@ int Connector::get_arguments(int argc, char** argv) {
             case 'v':
                 print_version();
                 return 1;
+            case 'd':
+                handler->set_device(optarg);
+                break;
+            case 'p':
+                port = atoi(optarg);
+                break;
+            case 'f':
+                center_frequency = strtod(optarg, NULL);
+                break;
+            case 's':
+                sample_rate = strtod(optarg, NULL);
+                break;
+            case 'g':
+                // TODO implement something for the gain
+                break;
+            case 'c':
+                control_port = atoi(optarg);
+                break;
+            case 'P':
+                ppm = atoi(optarg);
+                break;
+            case 'i':
+                // TODO implement iq swap
+                break;
+            case 'r':
+                // TODO implement rtl_tcp compat
+                break;
         }
     }
     return 0;
@@ -71,4 +99,47 @@ void Connector::print_usage(char* program) {
 
 void Connector::print_version() {
     fprintf(stdout, "owrx-connector version %s\n", VERSION);
+}
+
+int Connector::setup_and_read() {
+    int r = 0;
+    r = handler->open();
+    if (r != 0) {
+        fprintf(stderr, "Handler::open() failed\n");
+        return 1;
+    }
+
+    r = handler->set_center_frequency(center_frequency);
+    if (r != 0) {
+        fprintf(stderr, "setting center frequency failed\n");
+        return 2;
+    }
+
+    r = handler->set_sample_rate(sample_rate);
+    if (r != 0) {
+        fprintf(stderr, "setting sample rate failed\n");
+        return 3;
+    }
+
+    r = handler->set_ppm(ppm);
+    if (r != 0) {
+        fprintf(stderr, "setting ppm failed\n");
+        return 4;
+    }
+
+    // TODO gain
+    // return code 5 reserved for gain fail
+    r = handler->read();
+    if (r != 0) {
+        fprintf(stderr, "Handler::read() failed\n");
+        return 2;
+    }
+
+    r = handler->close();
+    if (r != 0) {
+        fprintf(stderr, "Handler::close() failed\n");
+        return 7;
+    }
+
+    return 0;
 }

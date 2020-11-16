@@ -42,6 +42,7 @@ if (RTLSDR_FOUND)
     if (HAS_RTLSDR_SET_BIAS_TEE)
         target_compile_definitions(rtl_connector PUBLIC HAS_RTLSDR_SET_BIAS_TEE)
     endif()
+    target_link_libraries(rtl_connector ${RTL_LIBS})
     install(TARGETS rtl_connector DESTINATION bin)
 endif()
 
