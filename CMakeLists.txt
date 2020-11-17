@@ -38,7 +38,7 @@ if (RTLSDR_FOUND)
     check_function_exists(rtlsdr_set_bias_tee HAS_RTLSDR_SET_BIAS_TEE)
     UNSET(CMAKE_REQUIRED_LIBRARIES)
 
-    add_executable(rtl_connector rtl_connector.cpp connector.cpp rtl_handler.cpp conversions.c ringbuffer.cpp)
+    add_executable(rtl_connector rtl_connector.cpp connector.cpp rtl_handler.cpp conversions.c ringbuffer.cpp iq_connection.cpp)
     if (HAS_RTLSDR_SET_BIAS_TEE)
         target_compile_definitions(rtl_connector PUBLIC HAS_RTLSDR_SET_BIAS_TEE)
     endif()

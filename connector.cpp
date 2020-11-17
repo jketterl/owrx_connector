@@ -1,5 +1,6 @@
 #include "connector.hpp"
 #include "version.h"
+#include "iq_connection.hpp"
 #include <cstdio>
 #include <getopt.h>
 #include <stdlib.h>
@@ -18,6 +19,10 @@ int Connector::main(int argc, char** argv) {
     } else if (r != 0) {
         return 1;
     }
+
+    IQSocket* iq_socket = new IQSocket(port);
+    iq_socket->start();
+
     setup_and_read();
     return 0;
 }
