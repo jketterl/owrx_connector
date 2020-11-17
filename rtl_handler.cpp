@@ -75,6 +75,7 @@ void RtlHandler::callback(unsigned char* buf, uint32_t len) {
         }
     }
     convert_u8_f32(source, float_buffer->get_write_pointer(), len);
+    float_buffer->advance(len);
     //if (rtltcp_compat) {
     //    memcpy(ringbuffer_u8 + write_pos, source, len);
     //}
