@@ -20,7 +20,7 @@ int Connector::main(int argc, char** argv) {
         return 1;
     }
 
-    IQSocket* iq_socket = new IQSocket(port);
+    IQSocket* iq_socket = new IQSocket(port, float_buffer);
     iq_socket->start();
 
     setup_and_read();
