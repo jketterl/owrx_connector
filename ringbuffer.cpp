@@ -40,7 +40,7 @@ void Ringbuffer<T>::advance(uint32_t how_much) {
 }
 
 template <typename T>
-int Ringbuffer<T>::available_bytes(int read_pos) {
+int Ringbuffer<T>::available_bytes(uint32_t read_pos) {
     if (read_pos < write_pos) {
         return write_pos - read_pos;
     } else {
