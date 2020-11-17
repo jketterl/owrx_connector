@@ -37,7 +37,7 @@ void IQSocket::accept_loop() {
         int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
 
         if (client_sock >= 0) {
-            IQConnection* worker = new IQConnection(client_sock, ringbuffer);
+            new IQConnection(client_sock, ringbuffer);
             /*
             pthread_t client_worker_thread;
             int r = pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
@@ -85,7 +85,7 @@ void IQConnection::loop() {
         float* read_pointer;
         int available;
         while ((read_pointer = ringbuffer->get_read_pointer(read_pos)) != nullptr) {
-            int available = ringbuffer->available_bytes(read_pos);
+            available = ringbuffer->available_bytes(read_pos);
             sent = send(sock, read_pointer, available * sizeof(float), MSG_NOSIGNAL);
             read_pos = (read_pos + available) % ringbuffer->get_length();
             if (sent <= 0) {
