@@ -1,6 +1,7 @@
 #include "connector.hpp"
 #include "version.h"
 #include "iq_connection.hpp"
+#include "control_connection.hpp"
 #include <cstdio>
 #include <getopt.h>
 #include <stdlib.h>
@@ -18,6 +19,10 @@ int Connector::main(int argc, char** argv) {
         return 0;
     } else if (r != 0) {
         return 1;
+    }
+
+    if (control_port > 0) {
+        new ControlSocket(control_port);
     }
 
     IQSocket* iq_socket = new IQSocket(port, float_buffer);
