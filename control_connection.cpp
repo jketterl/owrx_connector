@@ -4,7 +4,7 @@
 
 ControlSocket::ControlSocket(uint16_t port) {
     struct sockaddr_in local;
-    char* addr = "127.0.0.1";
+    const char* addr = "127.0.0.1";
 
     fprintf(stderr, "setting up control socket...\n");
 

@@ -25,11 +25,11 @@ class RtlHandler: public Handler {
         void set_buffers(Ringbuffer<float>* float_buffer) override;
         void callback(unsigned char* buf, uint32_t len);
     private:
-        char* device_id = "0";
+        char const* device_id = "0";
         rtlsdr_dev_t* dev;
         bool iqswap;
         uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
         uint8_t* conversion_buffer = (uint8_t*) malloc(sizeof(uint8_t) * rtl_buffer_size);
         Ringbuffer<float>* float_buffer;
-        uint32_t verbose_device_search(char *s);
+        uint32_t verbose_device_search(char const *s);
 };

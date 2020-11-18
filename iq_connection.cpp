@@ -8,7 +8,7 @@ IQSocket::IQSocket(uint16_t port, Ringbuffer<float>* new_ringbuffer) {
     ringbuffer = new_ringbuffer;
 
     struct sockaddr_in local;
-    char* addr = "127.0.0.1";
+    const char* addr = "127.0.0.1";
 
     memset(&local, 0, sizeof(local));
     local.sin_family = AF_INET;

@@ -89,7 +89,7 @@ int RtlHandler::close() {
     return rtlsdr_close(dev);
 }
 
-uint32_t RtlHandler::verbose_device_search(char *s) {
+uint32_t RtlHandler::verbose_device_search(char const *s) {
 	int i, device_count, device, offset;
 	char *s2;
 	char vendor[256], product[256], serial[256];
