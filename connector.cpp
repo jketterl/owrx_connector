@@ -71,7 +71,7 @@ int Connector::get_arguments(int argc, char** argv) {
                 sample_rate = strtod(optarg, NULL);
                 break;
             case 'g':
-                // TODO implement something for the gain
+                gain = GainSpec::parse(new std::string(optarg));
                 break;
             case 'c':
                 control_port = atoi(optarg);
@@ -139,8 +139,11 @@ int Connector::setup_and_read() {
         return 4;
     }
 
-    // TODO gain
-    // return code 5 reserved for gain fail
+    r = handler->set_gain(gain);
+    if (r != 0) {
+        fprintf(stderr, "setting gain failed\n");
+        return 5;
+    }
 
     r = handler->set_iqswap(iqswap);
     if (r != 0) {

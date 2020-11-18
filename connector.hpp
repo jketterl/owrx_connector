@@ -2,6 +2,8 @@
 
 #include "handler.hpp"
 #include "ringbuffer.hpp"
+#include "gainspec.hpp"
+#include <string>
 
 class Connector {
     public:
@@ -15,6 +17,7 @@ class Connector {
         double sample_rate;
         int32_t ppm;
         bool iqswap = false;
+        GainSpec* gain = new AutoGainSpec();
         Ringbuffer<float>* float_buffer;
 
         int get_arguments(int argc, char** argv);

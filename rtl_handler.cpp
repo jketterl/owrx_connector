@@ -156,22 +156,31 @@ int RtlHandler::set_sample_rate(double sample_rate) {
     return rtlsdr_set_sample_rate(dev, sample_rate);
 }
 
-// TODO introduce gainspec
-int RtlHandler::set_gain() {
-    //int gainmode = params->agc ? 0 : 1;
-    //r = rtlsdr_set_tuner_gain_mode(dev, gainmode);
-    //if (r < 0) {
-    //    fprintf(stderr, "setting gain mode failed\n");
-    //    return 5;
-    //}
+int RtlHandler::set_gain(GainSpec* gain) {
+    int r;
+    SimpleGainSpec* simple_gain;
+    if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
+        r = rtlsdr_set_tuner_gain_mode(dev, 0);
+        if (r < 0) {
+            fprintf(stderr, "setting gain mode failed\n");
+            return 1;
+        }
+    } else if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
+        r = rtlsdr_set_tuner_gain_mode(dev, 1);
+        if (r < 0) {
+            fprintf(stderr, "setting gain mode failed\n");
+            return 2;
+        }
 
-    //if (!params->agc) {
-    //    r = rtlsdr_set_tuner_gain(dev, params->gain);
-    //    if (r < 0) {
-    //        fprintf(stderr, "setting gain failed\n");
-    //        return 6;
-    //    }
-    //}
+        r = rtlsdr_set_tuner_gain(dev, (int)(simple_gain->getValue() * 10));
+        if (r < 0) {
+            fprintf(stderr, "setting gain failed\n");
+            return 3;
+        }
+    } else {
+        fprintf(stderr, "unsupported gain settings\n");
+        return 100;
+    }
 
     return 0;
 }

@@ -2,6 +2,7 @@
 
 #include "handler.hpp"
 #include "ringbuffer.hpp"
+#include "gainspec.hpp"
 #include <stdint.h>
 #include <rtl-sdr.h>
 #include <cstdlib>
@@ -17,8 +18,7 @@ class RtlHandler: public Handler {
         int close() override;
         int set_center_frequency(double frequency) override;
         int set_sample_rate(double sample_rate) override;
-        // TODO introduce gainspec
-        int set_gain() override;
+        int set_gain(GainSpec* gain) override;
         int set_ppm(int32_t ppm) override;
         int set_iqswap(bool iqswap) override;
         uint32_t get_buffer_size() override;
