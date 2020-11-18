@@ -7,10 +7,8 @@
 #include <stdlib.h>
 #include <algorithm>
 
-Connector::Connector(Handler* new_handler) {
-    handler = new_handler;
-    float_buffer = new Ringbuffer<float>(10 * handler->get_buffer_size());
-    handler->set_buffers(float_buffer);
+void Connector::init_buffers() {
+    float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
 }
 
 int Connector::main(int argc, char** argv) {
@@ -60,7 +58,7 @@ int Connector::get_arguments(int argc, char** argv) {
                 print_version();
                 return 1;
             case 'd':
-                handler->set_device(optarg);
+                device_id = optarg;
                 break;
             case 'p':
                 port = atoi(optarg);
@@ -81,7 +79,7 @@ int Connector::get_arguments(int argc, char** argv) {
                 ppm = atoi(optarg);
                 break;
             case 'i':
-                handler->set_iqswap(true);
+                set_iqswap(true);
                 break;
             case 'r':
                 // TODO implement rtl_tcp compat
@@ -116,50 +114,50 @@ void Connector::print_version() {
 
 int Connector::setup_and_read() {
     int r = 0;
-    r = handler->open();
+    r = open();
     if (r != 0) {
         fprintf(stderr, "Handler::open() failed\n");
         return 1;
     }
 
-    r = handler->set_center_frequency(center_frequency);
+    r = set_center_frequency(center_frequency);
     if (r != 0) {
         fprintf(stderr, "setting center frequency failed\n");
         return 2;
     }
 
-    r = handler->set_sample_rate(sample_rate);
+    r = set_sample_rate(sample_rate);
     if (r != 0) {
         fprintf(stderr, "setting sample rate failed\n");
         return 3;
     }
 
-    r = handler->set_ppm(ppm);
+    r = set_ppm(ppm);
     if (r != 0) {
         fprintf(stderr, "setting ppm failed\n");
         return 4;
     }
 
-    r = handler->set_gain(gain);
+    r = set_gain(gain);
     if (r != 0) {
         fprintf(stderr, "setting gain failed\n");
         return 5;
     }
 
-    r = handler->set_iqswap(iqswap);
+    r = set_iqswap(iqswap);
     if (r != 0) {
         fprintf(stderr, "setting iqswap failed\n");
         return 6;
     }
 
-    r = handler->read();
+    r = read();
     if (r != 0) {
         fprintf(stderr, "Handler::read() failed\n");
         return 100;
     }
 
 
-    r = handler->close();
+    r = close();
     if (r != 0) {
         fprintf(stderr, "Handler::close() failed\n");
         return 101;
@@ -172,19 +170,19 @@ void Connector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "center_freq") {
         center_frequency = std::stoul(value);
-        r = handler->set_center_frequency(center_frequency);
+        r = set_center_frequency(center_frequency);
     } else if (key == "samp_rate") {
         sample_rate = std::stoul(value);
-        r = handler->set_sample_rate(sample_rate);
+        r = set_sample_rate(sample_rate);
     } else if (key == "rf_gain") {
         gain = GainSpec::parse(&value);
-        r = handler->set_gain(gain);
+        r = set_gain(gain);
     } else if (key == "ppm") {
         ppm = stoi(value);
-        r = handler->set_ppm(ppm);
+        r = set_ppm(ppm);
     } else if (key == "iqswap") {
         iqswap = convertBooleanValue(value);
-        r = handler->set_iqswap(iqswap);
+        r = set_iqswap(iqswap);
     } else {
         fprintf(stderr, "could not set unknown key: \"%s\"\n", key.c_str());
     }
