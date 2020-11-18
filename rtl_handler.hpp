@@ -31,5 +31,5 @@ class RtlHandler: public Handler {
         uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
         uint8_t* conversion_buffer = (uint8_t*) malloc(sizeof(uint8_t) * rtl_buffer_size);
         Ringbuffer<float>* float_buffer;
-        uint32_t verbose_device_search(char const *s);
+        int verbose_device_search(char const *s);
 };

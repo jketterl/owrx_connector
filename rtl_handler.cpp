@@ -11,7 +11,7 @@ void RtlHandler::set_device(char* new_device) {
 }
 
 int RtlHandler::open() {
-    uint32_t dev_index = verbose_device_search(device_id);
+    int dev_index = verbose_device_search(device_id);
 
     if (dev_index < 0) {
         fprintf(stderr, "no device found.\n");
@@ -89,7 +89,7 @@ int RtlHandler::close() {
     return rtlsdr_close(dev);
 }
 
-uint32_t RtlHandler::verbose_device_search(char const *s) {
+int RtlHandler::verbose_device_search(char const *s) {
 	int i, device_count, device, offset;
 	char *s2;
 	char vendor[256], product[256], serial[256];
