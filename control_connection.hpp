@@ -1,5 +1,6 @@
 #pragma once
 
+#include "connector.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -8,8 +9,9 @@
 
 class ControlSocket {
     public:
-        ControlSocket(uint16_t port);
+        ControlSocket(Connector* connector, uint16_t port);
     private:
+        Connector* connector;
         int sock;
         bool run = true;
         std::thread thread;

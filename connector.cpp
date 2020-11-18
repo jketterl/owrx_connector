@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <getopt.h>
 #include <stdlib.h>
+#include <algorithm>
 
 Connector::Connector(Handler* new_handler) {
     handler = new_handler;
@@ -22,7 +23,7 @@ int Connector::main(int argc, char** argv) {
     }
 
     if (control_port > 0) {
-        new ControlSocket(control_port);
+        new ControlSocket(this, control_port);
     }
 
     IQSocket* iq_socket = new IQSocket(port, float_buffer);
@@ -165,4 +166,35 @@ int Connector::setup_and_read() {
     }
 
     return 0;
+}
+
+void Connector::applyChange(std::string key, std::string value) {
+    int r = 0;
+    if (key == "center_freq") {
+        center_frequency = std::stoul(value);
+        r = handler->set_center_frequency(center_frequency);
+    } else if (key == "samp_rate") {
+        sample_rate = std::stoul(value);
+        r = handler->set_sample_rate(sample_rate);
+    } else if (key == "rf_gain") {
+        gain = GainSpec::parse(&value);
+        r = handler->set_gain(gain);
+    } else if (key == "ppm") {
+        ppm = stoi(value);
+        r = handler->set_ppm(ppm);
+    } else if (key == "iqswap") {
+        iqswap = convertBooleanValue(value);
+        r = handler->set_iqswap(iqswap);
+    } else {
+        fprintf(stderr, "could not set unknown key: \"%s\"\n", key.c_str());
+    }
+    if (r != 0) {
+        fprintf(stderr, "WARNING: setting %s failed: %i\n", key.c_str(), r);
+    }
+}
+
+bool Connector::convertBooleanValue(std::string input) {
+    std::string lower = input;
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c){ return std::tolower(c); });
+    return lower == "1" || lower == "true";
 }

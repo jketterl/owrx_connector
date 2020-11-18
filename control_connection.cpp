@@ -1,8 +1,11 @@
 #include "control_connection.hpp"
 #include <cstdio>
 #include <cstring>
+#include <string>
 
-ControlSocket::ControlSocket(uint16_t port) {
+ControlSocket::ControlSocket(Connector* new_connector, uint16_t port) {
+    connector = new_connector;
+
     struct sockaddr_in local;
     const char* addr = "127.0.0.1";
 
@@ -42,6 +45,23 @@ void ControlSocket::loop() {
                 run = false;
             } else {
                 fprintf(stderr, "receive %i bytes on control socket\n", read_bytes);
+                std::string message = std::string(reinterpret_cast<char const*>(&buf));
+                size_t newline_pos;
+                while ((newline_pos = message.find('\n')) != std::string::npos) {
+                    std::string line = message.substr(0, newline_pos);
+                    message = message.substr(newline_pos + 1);
+
+                    size_t equals_pos = line.find('=');
+                    if (equals_pos == std::string::npos) {
+                        fprintf(stderr, "invalid message: \"%s\"\n", line.c_str());
+                        continue;
+                    }
+
+                    std::string key = line.substr(0, equals_pos);
+                    std::string value = line.substr(equals_pos + 1);
+
+                    connector->applyChange(key, value);
+                }
                 /*
                 char* message = malloc(sizeof(char) * (read_bytes + 1));
                 // need to make copies since strtok() modifies the original
