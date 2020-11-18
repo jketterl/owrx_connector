@@ -1,6 +1,5 @@
 #pragma once
 
-#include "handler.hpp"
 #include "ringbuffer.hpp"
 #include "gainspec.hpp"
 #include <string>
