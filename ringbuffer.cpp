@@ -24,11 +24,7 @@ T* Ringbuffer<T>::get_write_pointer() {
 template <typename T>
 T* Ringbuffer<T>::get_read_pointer(uint32_t read_pos) {
     if (read_pos == write_pos) return nullptr;
-    if (read_pos < write_pos) {
-        return buffer + read_pos;
-    } else {
-        return buffer;
-    }
+    return buffer + read_pos;
 }
 
 template <typename T>
@@ -41,7 +37,11 @@ void Ringbuffer<T>::advance(uint32_t how_much) {
 
 template <typename T>
 int Ringbuffer<T>::available_bytes(uint32_t read_pos) {
-    return write_pos - read_pos;
+    if (read_pos < write_pos) {
+        return write_pos - read_pos;
+    } else {
+        return len - read_pos;
+    }
 }
 
 // modulo that will respect the sign
