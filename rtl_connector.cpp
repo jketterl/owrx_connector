@@ -150,6 +150,10 @@ int RtlConnector::verbose_device_search(char const *s) {
 	return -1;
 }
 
+void RtlConnector::applyChange(std::string key, std::string value) {
+    Connector::applyChange(key, value);
+}
+
 int RtlConnector::set_center_frequency(double frequency) {
     return rtlsdr_set_center_freq(dev, frequency);
 }

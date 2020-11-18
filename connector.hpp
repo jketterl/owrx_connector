@@ -9,11 +9,13 @@ class Connector {
     public:
         int main(int argc, char** argv);
         void init_buffers();
-        void applyChange(std::string key, std::string value);
 
+        virtual void applyChange(std::string key, std::string value);
     protected:
         char* device_id = nullptr;
         Ringbuffer<float>* float_buffer;
+
+        int set_iqswap(bool iqswap);
 
         virtual uint32_t get_buffer_size() = 0;
         virtual int open() = 0;
@@ -23,7 +25,6 @@ class Connector {
         virtual int set_sample_rate(double sample_rate) = 0;
         virtual int set_gain(GainSpec* gain) = 0;
         virtual int set_ppm(int ppm) = 0;
-        int set_iqswap(bool iqswap);
     private:
         uint16_t port = 4950;
         int32_t control_port = -1;

@@ -12,7 +12,9 @@
 class RtlConnector: public Connector {
     public:
         void callback(unsigned char* buf, uint32_t len);
+        void applyChange(std::string key, std::string value) override;
     protected:
+
         uint32_t get_buffer_size() override;
         int open() override;
         int read() override;
