@@ -51,14 +51,14 @@ void ControlSocket::loop() {
                     std::string line = message.substr(0, newline_pos);
                     message = message.substr(newline_pos + 1);
 
-                    size_t equals_pos = line.find('=');
-                    if (equals_pos == std::string::npos) {
+                    size_t colon_pos = line.find(':');
+                    if (colon_pos == std::string::npos) {
                         fprintf(stderr, "invalid message: \"%s\"\n", line.c_str());
                         continue;
                     }
 
-                    std::string key = line.substr(0, equals_pos);
-                    std::string value = line.substr(equals_pos + 1);
+                    std::string key = line.substr(0, colon_pos);
+                    std::string value = line.substr(colon_pos + 1);
 
                     connector->applyChange(key, value);
                 }
