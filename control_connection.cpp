@@ -44,8 +44,7 @@ void ControlSocket::loop() {
             if (read_bytes <= 0) {
                 run = false;
             } else {
-                fprintf(stderr, "receive %i bytes on control socket\n", read_bytes);
-                std::string message = std::string(reinterpret_cast<char const*>(&buf));
+                std::string message = std::string(reinterpret_cast<char const*>(&buf), read_bytes);
                 size_t newline_pos;
                 while ((newline_pos = message.find('\n')) != std::string::npos) {
                     std::string line = message.substr(0, newline_pos);
