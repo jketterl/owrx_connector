@@ -23,11 +23,18 @@ class RtlConnector: public Connector {
         int set_sample_rate(double sample_rate) override;
         int set_gain(GainSpec* gain) override;
         int set_ppm(int32_t ppm) override;
+        int set_direct_sampling(int direct_sampling);
+#if HAS_RTLSDR_SET_BIAS_TEE
+        int set_bias_tee(bool bias_tee);
+#endif
     private:
         uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
         rtlsdr_dev_t* dev;
-        bool iqswap;
         uint8_t* conversion_buffer = (uint8_t*) malloc(sizeof(uint8_t) * rtl_buffer_size);
+        int direct_sampling = 0;
+#if HAS_RTLSDR_SET_BIAS_TEE
+        bool bias_tee = false;
+#endif
 
         int verbose_device_search(char const *s);
 };

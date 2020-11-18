@@ -14,8 +14,10 @@ class Connector {
     protected:
         char* device_id = nullptr;
         Ringbuffer<float>* float_buffer;
+        bool iqswap = false;
 
         int set_iqswap(bool iqswap);
+        bool convertBooleanValue(std::string input);
 
         virtual uint32_t get_buffer_size() = 0;
         virtual int open() = 0;
@@ -31,12 +33,10 @@ class Connector {
         double center_frequency;
         double sample_rate;
         int32_t ppm;
-        bool iqswap = false;
         GainSpec* gain = new AutoGainSpec();
 
         int get_arguments(int argc, char** argv);
         void print_usage(char* program);
         void print_version();
         int setup_and_read();
-        bool convertBooleanValue(std::string input);
 };

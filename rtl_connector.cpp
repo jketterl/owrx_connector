@@ -151,7 +151,18 @@ int RtlConnector::verbose_device_search(char const *s) {
 }
 
 void RtlConnector::applyChange(std::string key, std::string value) {
-    Connector::applyChange(key, value);
+    int r = 0;
+    if (key == "direct_sampling") {
+        direct_sampling = convertBooleanValue(value);
+        set_direct_sampling(direct_sampling);
+#if HAS_RTLSDR_SET_BIAS_TEE
+    } else if (key == "bias_tee") {
+        bias_tee = stoi(value);
+        set_bias_tee(bias_tee);
+#endif
+    } else {
+        Connector::applyChange(key, value);
+    }
 }
 
 int RtlConnector::set_center_frequency(double frequency) {
@@ -198,6 +209,16 @@ int RtlConnector::set_ppm(int32_t ppm) {
 
     return rtlsdr_set_freq_correction(dev, ppm);
 };
+
+int RtlConnector::set_direct_sampling(int new_direct_sampling) {
+    return rtlsdr_set_direct_sampling(dev, new_direct_sampling);
+}
+
+#if HAS_RTLSDR_SET_BIAS_TEE
+int RtlConnector::set_bias_tee(bool new_bias_tee) {
+    return rtlsdr_set_bias_tee(dev, (int) new_bias_tee);
+}
+#endif
 
 int main (int argc, char** argv) {
     Connector* connector = new RtlConnector();
