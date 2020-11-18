@@ -80,9 +80,6 @@ void RtlConnector::callback(unsigned char* buf, uint32_t len) {
     //}
 
     float_buffer->advance(len);
-    //pthread_mutex_lock(&wait_mutex);
-    //pthread_cond_broadcast(&wait_condition);
-    //pthread_mutex_unlock(&wait_mutex);
 }
 
 int RtlConnector::close() {
@@ -197,11 +194,6 @@ int RtlConnector::set_ppm(int32_t ppm) {
 
     return rtlsdr_set_freq_correction(dev, ppm);
 };
-
-int RtlConnector::set_iqswap(bool new_iqswap) {
-    iqswap = new_iqswap;
-    return 0;
-}
 
 int main (int argc, char** argv) {
     Connector* connector = new RtlConnector();

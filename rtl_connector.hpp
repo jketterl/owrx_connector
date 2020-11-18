@@ -21,7 +21,6 @@ class RtlConnector: public Connector {
         int set_sample_rate(double sample_rate) override;
         int set_gain(GainSpec* gain) override;
         int set_ppm(int32_t ppm) override;
-        int set_iqswap(bool iqswap) override;
     private:
         uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
         rtlsdr_dev_t* dev;

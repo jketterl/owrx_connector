@@ -166,6 +166,11 @@ int Connector::setup_and_read() {
     return 0;
 }
 
+int Connector::set_iqswap(bool new_iqswap) {
+    iqswap = new_iqswap;
+    return 0;
+}
+
 void Connector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "center_freq") {
