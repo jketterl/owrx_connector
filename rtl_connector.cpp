@@ -146,7 +146,7 @@ int RtlConnector::verbose_device_search(char const *s) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
 		std::cerr << "  " << i << ":  " << vendor << ", " << product << ", SN: " << serial << "\n";
 	}
-	std::cerr << stderr, "\n";
+	std::cerr << "\n";
 	/* if no device has been selected by the user, use the first one */
 	if (s == nullptr) {
 	    if (device_count > 0) return 0;
@@ -200,14 +200,18 @@ void RtlConnector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "direct_sampling") {
         direct_sampling = convertBooleanValue(value);
-        set_direct_sampling(direct_sampling);
+        r = set_direct_sampling(direct_sampling);
 #if HAS_RTLSDR_SET_BIAS_TEE
     } else if (key == "bias_tee") {
         bias_tee = stoi(value);
-        set_bias_tee(bias_tee);
+        r = set_bias_tee(bias_tee);
 #endif
     } else {
         Connector::applyChange(key, value);
+        return;
+    }
+    if (r != 0) {
+        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << "\n";
     }
 }
 
