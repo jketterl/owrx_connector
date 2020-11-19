@@ -10,6 +10,43 @@ uint32_t RtlConnector::get_buffer_size() {
     return rtl_buffer_size;
 }
 
+std::stringstream RtlConnector::get_usage_string() {
+    std::stringstream s = Connector::get_usage_string();
+    s <<
+#if HAS_RTLSDR_SET_BIAS_TEE
+        " -b, --biastee           enable bias-tee voltage if supported by hardware\n" <<
+#endif
+        " -e, --directsampling    enable direct sampling on the specified input\n" <<
+        "                         (0 = disabled, 1 = I-input, 2 = Q-input)\n";
+    return s;
+}
+
+std::vector<struct option> RtlConnector::getopt_long_options(){
+    std::vector<struct option> long_options = Connector::getopt_long_options();
+    long_options.push_back({"directsampling", required_argument, NULL, 'e'});
+#if HAS_RTLSDR_SET_BIAS_TEE
+    long_options.push_back({"biastee", no_argument, NULL, 'b'});
+#endif
+    return long_options;
+}
+
+int RtlConnector::receive_option(int c, char* optarg) {
+    switch (c) {
+#if HAS_RTLSDR_SET_BIAS_TEE
+        case 'b':
+            bias_tee = true;
+            break;
+#endif
+        case 'e':
+            direct_sampling = atoi(optarg);
+            break;
+        default:
+            return Connector::receive_option(c, optarg);
+    }
+    return 0;
+}
+
+
 int RtlConnector::open() {
     int dev_index = verbose_device_search(device_id);
 

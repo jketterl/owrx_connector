@@ -14,7 +14,9 @@ class RtlConnector: public Connector {
         void callback(unsigned char* buf, uint32_t len);
         void applyChange(std::string key, std::string value) override;
     protected:
-
+        std::stringstream get_usage_string() override;
+        std::vector<struct option> getopt_long_options() override;
+        int receive_option(int c, char* optarg);
         uint32_t get_buffer_size() override;
         int open() override;
         int read() override;

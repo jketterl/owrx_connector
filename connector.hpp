@@ -3,6 +3,9 @@
 #include "ringbuffer.hpp"
 #include "gainspec.hpp"
 #include <string>
+#include <sstream>
+#include <getopt.h>
+#include <vector>
 
 class Connector {
     public:
@@ -18,6 +21,9 @@ class Connector {
         int set_iqswap(bool iqswap);
         bool convertBooleanValue(std::string input);
 
+        virtual std::stringstream get_usage_string();
+        virtual std::vector<struct option> getopt_long_options();
+        virtual int receive_option(int c, char* optarg);
         virtual uint32_t get_buffer_size() = 0;
         virtual int open() = 0;
         virtual int read() = 0;
@@ -27,6 +33,7 @@ class Connector {
         virtual int set_gain(GainSpec* gain) = 0;
         virtual int set_ppm(int ppm) = 0;
     private:
+        char* program_name;
         uint16_t port = 4950;
         int32_t control_port = -1;
         double center_frequency;
@@ -35,7 +42,7 @@ class Connector {
         GainSpec* gain = new AutoGainSpec();
 
         int get_arguments(int argc, char** argv);
-        void print_usage(char* program);
+        void print_usage();
         void print_version();
         int setup_and_read();
 };
