@@ -26,6 +26,7 @@ class Connector {
         virtual int receive_option(int c, char* optarg);
         virtual uint32_t get_buffer_size() = 0;
         virtual int open() = 0;
+        virtual int setup();
         virtual int read() = 0;
         virtual int close() = 0;
         virtual int set_center_frequency(double frequency) = 0;
@@ -44,5 +45,4 @@ class Connector {
         int get_arguments(int argc, char** argv);
         void print_usage();
         void print_version();
-        int setup_and_read();
 };

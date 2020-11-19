@@ -27,7 +27,30 @@ int Connector::main(int argc, char** argv) {
     IQSocket* iq_socket = new IQSocket(port, float_buffer);
     iq_socket->start();
 
-    setup_and_read();
+    r = open();
+    if (r != 0) {
+        std::cerr << "Connector::open() failed\n";
+        return 1;
+    }
+
+    r = setup();
+    if (r != 0) {
+        std::cerr << "Connector::setup() failed\n";
+        return 2;
+    }
+
+    r = read();
+    if (r != 0) {
+        std::cerr << "Connector::read() failed\n";
+        return 3;
+    }
+
+    r = close();
+    if (r != 0) {
+        std::cerr << "Connector::close() failed\n";
+        return 4;
+    }
+
     return 0;
 }
 
@@ -138,13 +161,8 @@ void Connector::print_version() {
     std::cout << "owrx-connector version " << VERSION << "\n";
 }
 
-int Connector::setup_and_read() {
+int Connector::setup() {
     int r = 0;
-    r = open();
-    if (r != 0) {
-        std::cerr << "Handler::open() failed\n";
-        return 1;
-    }
 
     r = set_center_frequency(center_frequency);
     if (r != 0) {
@@ -174,19 +192,6 @@ int Connector::setup_and_read() {
     if (r != 0) {
         std::cerr << "setting iqswap failed\n";
         return 6;
-    }
-
-    r = read();
-    if (r != 0) {
-        std::cerr << "Handler::read() failed\n";
-        return 100;
-    }
-
-
-    r = close();
-    if (r != 0) {
-        std::cerr << "Handler::close() failed\n";
-        return 101;
     }
 
     return 0;

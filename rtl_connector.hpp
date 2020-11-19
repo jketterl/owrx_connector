@@ -19,6 +19,7 @@ class RtlConnector: public Connector {
         int receive_option(int c, char* optarg);
         uint32_t get_buffer_size() override;
         int open() override;
+        int setup() override;
         int read() override;
         int close() override;
         int set_center_frequency(double frequency) override;

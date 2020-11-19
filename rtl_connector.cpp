@@ -2,9 +2,9 @@
 extern "C" {
 #include "conversions.h"
 }
-#include <cstdio>
 #include <cstring>
 #include <stdlib.h>
+#include <iostream>
 
 uint32_t RtlConnector::get_buffer_size() {
     return rtl_buffer_size;
@@ -51,14 +51,37 @@ int RtlConnector::open() {
     int dev_index = verbose_device_search(device_id);
 
     if (dev_index < 0) {
-        fprintf(stderr, "no device found.\n");
+        std::cerr << "no device found.\n";
         return 1;
     }
 
     rtlsdr_open(&dev, (uint32_t)dev_index);
     if (NULL == dev) {
-        fprintf(stderr, "device could not be opened\n");
+        std::cerr << "device could not be opened\n";
         return 2;
+    }
+
+    return 0;
+}
+
+int RtlConnector::setup() {
+    int r = Connector::setup();
+    if (r != 0) return r;
+
+#if HAS_RTLSDR_SET_BIAS_TEE
+    r = set_bias_tee( bias_tee);
+    if (r != 0) {
+        std::cerr << "setting biastee failed\n";
+        return 10;
+    }
+#endif
+
+    if (direct_sampling >= 0 && direct_sampling <= 2) {
+        r = set_direct_sampling(direct_sampling);
+        if (r != 0) {
+            std::cerr << "setting direct sampling mode failed\n";
+            return 11;
+        }
     }
 
     return 0;
@@ -72,35 +95,21 @@ int RtlConnector::read() {
     uint32_t buf_num = 2;
     int r;
 
-#if HAS_RTLSDR_SET_BIAS_TEE
-    //r = rtlsdr_set_bias_tee(dev, (int) params->biastee);
-    //if (r < 0) {
-    //    fprintf(stderr, "setting biastee failed\n");
-    //}
-#endif
-
-    //if (params->directsampling >= 0 && params->directsampling <= 2) {
-    //    r = rtlsdr_set_direct_sampling(dev, params->directsampling);
-    //    if (r < 0) {
-    //        fprintf(stderr, "setting direct sampling mode failed\n");
-    //    }
-    //}
-
     r = rtlsdr_reset_buffer(dev);
     if (r < 0) {
-        fprintf(stderr, "WARNING: Failed to reset buffers.\n");
+        std::cerr <<  "WARNING: Failed to reset buffers.\n";
     }
 
     r = rtlsdr_read_async(dev, rtlsdr_callback, this, buf_num, rtl_buffer_size);
     if (r != 0) {
-        fprintf(stderr, "WARNING: rtlsdr_read_async failed with r = %i\n", r);
+        std::cerr << "WARNING: rtlsdr_read_async failed with r = " << r << "\n";
     }
     return r;
 }
 
 void RtlConnector::callback(unsigned char* buf, uint32_t len) {
     if (len != rtl_buffer_size) {
-        fprintf(stderr, "WARNING: invalid buffer size received; skipping input\n");
+        std::cerr << "WARNING: invalid buffer size received; skipping input\n";
         return;
     }
     uint8_t* source = (uint8_t*) buf;
@@ -129,15 +138,15 @@ int RtlConnector::verbose_device_search(char const *s) {
 	char vendor[256], product[256], serial[256];
 	device_count = rtlsdr_get_device_count();
 	if (!device_count) {
-		fprintf(stderr, "No supported devices found.\n");
+		std::cerr << "No supported devices found.\n";
 		return -1;
 	}
-	fprintf(stderr, "Found %d device(s):\n", device_count);
+	std::cerr << "Found " << device_count << " device(s):\n";
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
+		std::cerr << "  " << i << ":  " << vendor << ", " << product << ", SN: " << serial << "\n";
 	}
-	fprintf(stderr, "\n");
+	std::cerr << stderr, "\n";
 	/* if no device has been selected by the user, use the first one */
 	if (s == nullptr) {
 	    if (device_count > 0) return 0;
@@ -146,8 +155,8 @@ int RtlConnector::verbose_device_search(char const *s) {
     /* does string look like raw id number */
     device = (int)strtol(s, &s2, 0);
 	if (s2[0] == '\0' && device >= 0 && device < device_count) {
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+		std::cerr << "Using device " << device << ": " <<
+		    rtlsdr_get_device_name((uint32_t)device) << "\n";
 		return device;
 	}
 	/* does string exact match a serial */
@@ -156,8 +165,8 @@ int RtlConnector::verbose_device_search(char const *s) {
 		if (strcmp(s, serial) != 0) {
 			continue;}
 		device = i;
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+		std::cerr << "Using device " << device << ": " <<
+		    rtlsdr_get_device_name((uint32_t)device) << "\n";
 		return device;
 	}
 	/* does string prefix match a serial */
@@ -166,8 +175,8 @@ int RtlConnector::verbose_device_search(char const *s) {
 		if (strncmp(s, serial, strlen(s)) != 0) {
 			continue;}
 		device = i;
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+		std::cerr << "Using device " << device << ": " <<
+		    rtlsdr_get_device_name((uint32_t)device) << "\n";
 		return device;
 	}
 	/* does string suffix match a serial */
@@ -179,11 +188,11 @@ int RtlConnector::verbose_device_search(char const *s) {
 		if (strncmp(s, serial+offset, strlen(s)) != 0) {
 			continue;}
 		device = i;
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+		std::cerr << "Using device " << device << ": " <<
+		    rtlsdr_get_device_name((uint32_t)device) << "\n";
 		return device;
 	}
-	fprintf(stderr, "No matching devices found.\n");
+	std::cerr << "No matching devices found.\n";
 	return -1;
 }
 
@@ -216,23 +225,23 @@ int RtlConnector::set_gain(GainSpec* gain) {
     if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
         r = rtlsdr_set_tuner_gain_mode(dev, 0);
         if (r < 0) {
-            fprintf(stderr, "setting gain mode failed\n");
+            std::cerr << "setting gain mode failed\n";
             return 1;
         }
     } else if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
         r = rtlsdr_set_tuner_gain_mode(dev, 1);
         if (r < 0) {
-            fprintf(stderr, "setting gain mode failed\n");
+            std::cerr << "setting gain mode failed\n";
             return 2;
         }
 
         r = rtlsdr_set_tuner_gain(dev, (int)(simple_gain->getValue() * 10));
         if (r < 0) {
-            fprintf(stderr, "setting gain failed\n");
+            std::cerr << "setting gain failed\n";
             return 3;
         }
     } else {
-        fprintf(stderr, "unsupported gain settings\n");
+        std::cerr << "unsupported gain settings\n";
         return 100;
     }
 
