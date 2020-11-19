@@ -34,7 +34,7 @@ class RtlConnector: public Connector {
         uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
         rtlsdr_dev_t* dev;
         uint8_t* conversion_buffer = (uint8_t*) malloc(sizeof(uint8_t) * rtl_buffer_size);
-        int direct_sampling = 0;
+        int direct_sampling = -1;
 #if HAS_RTLSDR_SET_BIAS_TEE
         bool bias_tee = false;
 #endif
