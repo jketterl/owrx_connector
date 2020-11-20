@@ -13,7 +13,7 @@ class Ringbuffer {
         T* get_write_pointer();
         T* get_read_pointer(uint32_t read_pos);
         void advance(uint32_t how_much);
-        int available_bytes(uint32_t read_pos);
+        uint32_t available_samples(uint32_t read_pos);
         uint32_t get_length();
         void wait();
     private:

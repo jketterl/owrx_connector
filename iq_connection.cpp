@@ -63,21 +63,12 @@ void IQConnection<T>::loop() {
     uint32_t read_pos = ringbuffer->get_write_pos();
     ssize_t sent;
 
+    T* read_pointer;
     while (run) {
         ringbuffer->wait();
-        //if (rtltcp_compat && run && use_float) {
-        //    read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
-        //    if (read_bytes > 0) {
-        //        fprintf(stderr, "unexpected data on socket; assuming rtl_tcp client, switching to u8 buffer\n");
-        //        use_float = false;
-        //        ringbuffer = ringbuffer_u8;
-        //        sample_size = sizeof(uint8_t);
-        //    }
-        //}
-        T* read_pointer;
         int available;
         while ((read_pointer = ringbuffer->get_read_pointer(read_pos)) != nullptr) {
-            available = ringbuffer->available_bytes(read_pos);
+            available = ringbuffer->available_samples(read_pos);
             sent = send(sock, read_pointer, available * sizeof(T), MSG_NOSIGNAL);
             read_pos = (read_pos + available) % ringbuffer->get_length();
             if (sent <= 0) {
