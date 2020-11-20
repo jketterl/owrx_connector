@@ -54,15 +54,7 @@ int SoapyConnector:: read() {
 
     SoapySDR::Stream* stream;
     try {
-#if SOAPY_SDR_API_VERSION < 0x00080000
-        // TODO check if this works
-        if (dev->setupStream(SOAPY_SDR_RX, format, std::vector<size_t>{channel}) != 0) {
-            fprintf(stderr, "SoapySDRDevice_setupStream failed: %s\n", SoapySDRDevice_lastError());
-            return 10;
-        }
-#else
         stream = dev->setupStream(SOAPY_SDR_RX, format, std::vector<size_t>{channel});
-#endif
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
         return 10;
