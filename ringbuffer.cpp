@@ -22,6 +22,17 @@ T* Ringbuffer<T>::get_write_pointer() {
 }
 
 template <typename T>
+uint32_t Ringbuffer<T>::get_writeable_samples() {
+    return len - write_pos;
+}
+
+template <typename T>
+uint32_t Ringbuffer<T>::get_writeable_samples(uint32_t requested) {
+    uint32_t writeable = get_writeable_samples();
+    return writeable > requested ? requested : writeable;
+}
+
+template <typename T>
 T* Ringbuffer<T>::get_read_pointer(uint32_t read_pos) {
     if (read_pos == write_pos) return nullptr;
     return buffer + read_pos;

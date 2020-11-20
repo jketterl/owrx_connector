@@ -11,6 +11,8 @@ class Ringbuffer {
         Ringbuffer(uint32_t len);
         uint32_t get_write_pos();
         T* get_write_pointer();
+        uint32_t get_writeable_samples();
+        uint32_t get_writeable_samples(uint32_t requested);
         T* get_read_pointer(uint32_t read_pos);
         void advance(uint32_t how_much);
         uint32_t available_samples(uint32_t read_pos);
