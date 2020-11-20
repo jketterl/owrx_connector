@@ -7,27 +7,29 @@
 #include <thread>
 #include "ringbuffer.hpp"
 
+template <typename T>
 class IQSocket {
     public:
-        IQSocket(uint16_t port, Ringbuffer<float>* ringbuffer);
+        IQSocket<T>(uint16_t port, Ringbuffer<T>* ringbuffer);
         void start();
     private:
         int sock;
         std::thread thread;
         bool run = true;
-        Ringbuffer<float>* ringbuffer;
+        Ringbuffer<T>* ringbuffer;
 
         void accept_loop();
 };
 
+template <typename T>
 class IQConnection {
     public:
-        IQConnection(int client_sock, Ringbuffer<float>* ringbuffer);
+        IQConnection(int client_sock, Ringbuffer<T>* ringbuffer);
     private:
         int sock;
         std::thread thread;
         bool run = true;
-        Ringbuffer<float>* ringbuffer;
+        Ringbuffer<T>* ringbuffer;
 
         void loop();
 };

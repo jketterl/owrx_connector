@@ -9,6 +9,9 @@
 
 void Connector::init_buffers() {
     float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
+    if (rtltcp_port > 0) {
+        uint8_buffer = new Ringbuffer<uint8_t>(10 * get_buffer_size());
+    }
 }
 
 int Connector::main(int argc, char** argv) {
@@ -20,12 +23,19 @@ int Connector::main(int argc, char** argv) {
         return 1;
     }
 
+    init_buffers();
+
     if (control_port > 0) {
         new ControlSocket(this, control_port);
     }
 
-    IQSocket* iq_socket = new IQSocket(port, float_buffer);
+    IQSocket<float>* iq_socket = new IQSocket<float>(port, float_buffer);
     iq_socket->start();
+
+    if (rtltcp_port > 0) {
+        IQSocket<uint8_t>* rtltcp_socket = new IQSocket<uint8_t>(rtltcp_port, uint8_buffer);
+        rtltcp_socket->start();
+    }
 
     r = open();
     if (r != 0) {
@@ -66,7 +76,7 @@ std::vector<struct option> Connector::getopt_long_options() {
         {"control", required_argument, NULL, 'c'},
         {"ppm", required_argument, NULL, 'P'},
         {"iqswap", no_argument, NULL, 'i'},
-        {"rtltcp", no_argument, NULL, 'r'},
+        {"rtltcp", required_argument, NULL, 'r'},
     };
 }
 
@@ -124,10 +134,10 @@ int Connector::receive_option(int c, char* optarg) {
             ppm = atoi(optarg);
             break;
         case 'i':
-            set_iqswap(true);
+            iqswap = true;
             break;
         case 'r':
-            // TODO implement rtl_tcp compat
+            rtltcp_port = atoi(optarg);
             break;
     }
     return 0;
@@ -148,6 +158,7 @@ std::stringstream Connector::get_usage_string() {
         " -g, --gain              set the gain level (default: 0; accepts 'auto' for agc)\n" <<
         " -c, --control           control socket port (default: disabled)\n" <<
         " -P, --ppm               set frequency correction ppm\n" <<
+        " -i, --iqswap            swap I and Q samples (reverse spectrum)\n" <<
         " -r, --rtltcp            enable rtl_tcp compatibility mode\n"
     ;
     return s;
@@ -194,11 +205,22 @@ int Connector::setup() {
         return 6;
     }
 
+    r = set_rtltcp_port(rtltcp_port);
+    if (r != 0) {
+        std::cerr << "setting rtltcp_compat failed\n";
+        return 7;
+    }
+
     return 0;
 }
 
 int Connector::set_iqswap(bool new_iqswap) {
     iqswap = new_iqswap;
+    return 0;
+}
+
+int Connector::set_rtltcp_port(int new_rtltcp_port) {
+    rtltcp_port = new_rtltcp_port;
     return 0;
 }
 

@@ -4,7 +4,8 @@
 #include <cstring>
 #include <unistd.h>
 
-IQSocket::IQSocket(uint16_t port, Ringbuffer<float>* new_ringbuffer) {
+template <typename T>
+IQSocket<T>::IQSocket(uint16_t port, Ringbuffer<T>* new_ringbuffer) {
     ringbuffer = new_ringbuffer;
 
     struct sockaddr_in local;
@@ -25,11 +26,13 @@ IQSocket::IQSocket(uint16_t port, Ringbuffer<float>* new_ringbuffer) {
     listen(sock, 1);
 }
 
-void IQSocket::start() {
+template <typename T>
+void IQSocket<T>::start() {
     thread = std::thread( [this] { accept_loop(); });
 }
 
-void IQSocket::accept_loop() {
+template <typename T>
+void IQSocket<T>::accept_loop() {
     struct sockaddr_in remote;
     unsigned int rlen = sizeof(remote);
 
@@ -37,19 +40,24 @@ void IQSocket::accept_loop() {
         int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
 
         if (client_sock >= 0) {
-            new IQConnection(client_sock, ringbuffer);
+            new IQConnection<T>(client_sock, ringbuffer);
         }
     }
 }
 
-IQConnection::IQConnection(int client_sock, Ringbuffer<float>* new_ringbuffer) {
+template class IQSocket<float>;
+template class IQSocket<uint8_t>;
+
+template <typename T>
+IQConnection<T>::IQConnection(int client_sock, Ringbuffer<T>* new_ringbuffer) {
     sock = client_sock;
     ringbuffer = new_ringbuffer;
     thread = std::thread( [this] { loop(); });
     thread.detach();
 }
 
-void IQConnection::loop() {
+template <typename T>
+void IQConnection<T>::loop() {
     fprintf(stderr, "client connection established\n");
 
     uint32_t read_pos = ringbuffer->get_write_pos();
@@ -66,11 +74,11 @@ void IQConnection::loop() {
         //        sample_size = sizeof(uint8_t);
         //    }
         //}
-        float* read_pointer;
+        T* read_pointer;
         int available;
         while ((read_pointer = ringbuffer->get_read_pointer(read_pos)) != nullptr) {
             available = ringbuffer->available_bytes(read_pos);
-            sent = send(sock, read_pointer, available * sizeof(float), MSG_NOSIGNAL);
+            sent = send(sock, read_pointer, available * sizeof(T), MSG_NOSIGNAL);
             read_pos = (read_pos + available) % ringbuffer->get_length();
             if (sent <= 0) {
                 run = false;
@@ -80,3 +88,6 @@ void IQConnection::loop() {
     fprintf(stderr, "closing client socket\n");
     close(sock);
 }
+
+template class IQConnection<float>;
+template class IQConnection<uint8_t>;

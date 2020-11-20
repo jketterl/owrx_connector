@@ -63,3 +63,4 @@ void Ringbuffer<T>::wait() {
 
 
 template class Ringbuffer<float>;
+template class Ringbuffer<uint8_t>;

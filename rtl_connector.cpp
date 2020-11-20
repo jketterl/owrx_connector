@@ -121,11 +121,12 @@ void RtlConnector::callback(unsigned char* buf, uint32_t len) {
         }
     }
     convert_u8_f32(source, float_buffer->get_write_pointer(), len);
-    //if (rtltcp_compat) {
-    //    memcpy(ringbuffer_u8 + write_pos, source, len);
-    //}
-
     float_buffer->advance(len);
+
+    if (rtltcp_port > 0) {
+        memcpy(uint8_buffer->get_write_pointer(), source, len);
+        uint8_buffer->advance(len);
+    }
 }
 
 int RtlConnector::close() {
@@ -272,6 +273,5 @@ int RtlConnector::set_bias_tee(bool new_bias_tee) {
 
 int main (int argc, char** argv) {
     Connector* connector = new RtlConnector();
-    connector->init_buffers();
     return connector->main(argc, argv);
 }
