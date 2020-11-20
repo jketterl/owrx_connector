@@ -38,19 +38,6 @@ void IQSocket::accept_loop() {
 
         if (client_sock >= 0) {
             new IQConnection(client_sock, ringbuffer);
-            /*
-            pthread_t client_worker_thread;
-            int r = pthread_create(&client_worker_thread, NULL, client_worker, &client_sock);
-            if (r != 0) {
-                fprintf(stderr, "WARNING: could not create client worker thread: %i\n", r);
-                continue;
-            }
-            r = pthread_detach(client_worker_thread);
-            if (r != 0) {
-                fprintf(stderr, "WARNING: could not detach client worker thread: %i\n", r);
-                continue;
-            }
-            */
         }
     }
 }
@@ -70,9 +57,6 @@ void IQConnection::loop() {
 
     while (run) {
         ringbuffer->wait();
-        //pthread_mutex_lock(&wait_mutex);
-        //pthread_cond_wait(&wait_condition, &wait_mutex);
-        //pthread_mutex_unlock(&wait_mutex);
         //if (rtltcp_compat && run && use_float) {
         //    read_bytes = recv(client_sock, &buf, 256, MSG_DONTWAIT | MSG_PEEK);
         //    if (read_bytes > 0) {
