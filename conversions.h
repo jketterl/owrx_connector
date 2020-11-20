@@ -1,4 +1,5 @@
 #pragma once
+#pragma GCC visibility push(default)
 
 #include "fmv.h"
 #include <stdint.h>
