@@ -4,12 +4,12 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
-SET(CMAKE_C_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
-SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
-SET(CMAKE_C_FLAGS_RELEASE "-O2")
-
 project (owrx-connector VERSION 0.4.0)
+
+# these are conflicting settings in older SoapySDR cmake files.
+# enable for testing purposes.
+#add_compile_options(-fvisibility=hidden)
+#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
 
 include(CheckFunctionExists)
 include(cmake/DetectIfunc.cmake)
@@ -26,6 +26,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 find_package(Threads REQUIRED)
 find_package(RTLSDR)
 find_package(SoapySDR "0.5")
+
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
+SET(CMAKE_C_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
+SET(CMAKE_C_FLAGS_RELEASE "-O2")
 
 SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
