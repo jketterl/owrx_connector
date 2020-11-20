@@ -33,6 +33,7 @@ add_library(version STATIC version.c)
 target_include_directories (version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(owrx-connector SHARED connector.cpp conversions.c ringbuffer.cpp iq_connection.cpp control_connection.cpp gainspec.cpp)
+target_link_libraries(owrx-connector ${LIBS})
 set_target_properties(owrx-connector PROPERTIES VERSION ${PROJECT_VERSION})
 install(TARGETS owrx-connector LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
@@ -48,8 +49,7 @@ if (RTLSDR_FOUND)
     if (HAS_RTLSDR_SET_BIAS_TEE)
         target_compile_definitions(rtl_connector PUBLIC HAS_RTLSDR_SET_BIAS_TEE)
     endif()
-    target_link_libraries(rtl_connector owrx-connector)
-    target_link_libraries(rtl_connector ${RTL_LIBS})
+    target_link_libraries(rtl_connector owrx-connector ${RTL_LIBS})
     install(TARGETS rtl_connector DESTINATION bin)
 endif()
 
