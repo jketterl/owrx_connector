@@ -75,21 +75,21 @@ int SoapyConnector:: read() {
                         source[i] = ((int16_t *)buf)[i ^ 1];
                     }
                 }
-                uint32_t remaining = len;
+                uint32_t consumed = 0;
                 uint32_t available;
-                while (remaining > 0) {
-                    available = float_buffer->get_writeable_samples(remaining);
-                    convert_s16_f(source, float_buffer->get_write_pointer(), available);
+                while (consumed < len) {
+                    available = float_buffer->get_writeable_samples(len - consumed);
+                    convert_s16_f(source + consumed, float_buffer->get_write_pointer(), available);
                     float_buffer->advance(available);
-                    remaining -= available;
+                    consumed += available;
                 }
                 if (rtltcp_port > 0) {
-                    remaining = len;
-                    while (remaining > 0) {
-                        available = uint8_buffer->get_writeable_samples(remaining);
-                        convert_s16_u8(source, uint8_buffer->get_write_pointer(), available);
+                    consumed = 0;
+                    while (consumed < len) {
+                        available = uint8_buffer->get_writeable_samples(len - consumed);
+                        convert_s16_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
                         uint8_buffer->advance(available);
-                        remaining -= available;
+                        consumed += available;
                     }
                 }
             } else if (format == SOAPY_SDR_CF32) {
@@ -100,21 +100,21 @@ int SoapyConnector:: read() {
                         source[i] = ((float *)buf)[i ^ 1];
                     }
                 }
-                uint32_t remaining = len;
+                uint32_t consumed = 0;
                 uint32_t available;
-                while (remaining > 0) {
-                    available = float_buffer->get_writeable_samples(remaining);
-                    memcpy(float_buffer->get_write_pointer(), source, available * sizeof(float));
+                while (consumed < len) {
+                    available = float_buffer->get_writeable_samples(len - consumed);
+                    memcpy(float_buffer->get_write_pointer(), source + consumed, available * sizeof(float));
                     float_buffer->advance(available);
-                    remaining -= available;
+                    consumed += available;
                 }
                 if (rtltcp_port > 0) {
-                    remaining = len;
-                    while (remaining > 0) {
-                        available = uint8_buffer->get_writeable_samples(remaining);
-                        convert_f32_u8(source, uint8_buffer->get_write_pointer(), available);
+                    consumed = 0;
+                    while (consumed < len) {
+                        available = uint8_buffer->get_writeable_samples(len - consumed);
+                        convert_f32_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
                         uint8_buffer->advance(available);
-                        remaining -= available;
+                        consumed += available;
                     }
                 }
             }
