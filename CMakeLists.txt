@@ -15,12 +15,6 @@ include(CheckFunctionExists)
 include(cmake/DetectIfunc.cmake)
 include(GNUInstallDirs)
 
-if (HAS_IFUNC)
-    add_definitions(-DOWRX_CONNECTOR_FMV)
-    SET(CMAKE_CXX_FLAGS_RELEASE "-O3")
-    SET(CMAKE_C_FLAGS_RELEASE "-O3")
-endif()
-
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
 find_package(Threads REQUIRED)
@@ -31,6 +25,12 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
 SET(CMAKE_C_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
 SET(CMAKE_C_FLAGS_RELEASE "-O2")
+
+if (HAS_IFUNC)
+    add_definitions(-DOWRX_CONNECTOR_FMV)
+    SET(CMAKE_CXX_FLAGS_RELEASE "-O3")
+    SET(CMAKE_C_FLAGS_RELEASE "-O3")
+endif()
 
 SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
