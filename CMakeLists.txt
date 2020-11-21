@@ -37,7 +37,7 @@ SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 add_library(version STATIC version.c)
 target_include_directories (version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(owrx-connector SHARED connector.cpp conversions.c ringbuffer.cpp iq_connection.cpp control_connection.cpp gainspec.cpp)
+add_library(owrx-connector SHARED connector.cpp ringbuffer.cpp iq_connection.cpp control_connection.cpp gainspec.cpp)
 target_link_libraries(owrx-connector ${LIBS})
 set_target_properties(owrx-connector PROPERTIES VERSION ${PROJECT_VERSION})
 install(TARGETS owrx-connector LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

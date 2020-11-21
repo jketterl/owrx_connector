@@ -22,9 +22,9 @@ class Connector {
         int rtltcp_port = -1;
 
         bool convertBooleanValue(std::string input);
-        void processSamples(int16_t* input, uint32_t len);
-        void processSamples(float* input, uint32_t len);
-        void processSamples(uint8_t* input, uint32_t len);
+
+        template <typename T>
+        void processSamples(T* input, uint32_t len);
 
         // methods that come with a reasonable default behaviour, but can be overridden
         virtual std::stringstream get_usage_string();
@@ -56,7 +56,15 @@ class Connector {
         int get_arguments(int argc, char** argv);
         void print_usage();
         void print_version();
-        void swapIQ(int16_t* input, int16_t* output, uint32_t len);
-        void swapIQ(float* input, float* output, uint32_t len);
-        void swapIQ(uint8_t* input, uint8_t* output, uint32_t len);
+
+        template <typename T>
+        void swapIQ(T* input, T* output, uint32_t len);
+
+        void convert(uint8_t* input, float* output, uint32_t len);
+        void convert(int16_t* input, float* output, uint32_t len);
+        void convert(float* input, float* output, uint32_t len);
+
+        void convert(uint8_t* input, uint8_t* output, uint32_t len);
+        void convert(int16_t* input, uint8_t* output, uint32_t len);
+        void convert(float* input, uint8_t* output, uint32_t len);
 };

@@ -2,14 +2,13 @@
 #include "version.h"
 #include "iq_connection.hpp"
 #include "control_connection.hpp"
-extern "C" {
-#include "conversions.h"
-}
+#include "fmv.h"
 #include <stdlib.h>
 #include <algorithm>
 #include <numeric>
 #include <iostream>
 #include <cstring>
+#include <climits>
 
 void Connector::init_buffers() {
     float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
@@ -261,23 +260,25 @@ bool Connector::convertBooleanValue(std::string input) {
     return lower == "1" || lower == "true";
 }
 
-void Connector::swapIQ(int16_t* input, int16_t* output, uint32_t len) {
+template <typename T>
+void Connector::swapIQ(T* input, T* output, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) {
         output[i] = input[i ^ 1];
     }
 }
 
-void Connector::processSamples(int16_t* input, uint32_t len) {
-    int16_t* source = input;
+template <typename T>
+void Connector::processSamples(T* input, uint32_t len) {
+    T* source = input;
     if (iqswap) {
-        source = (int16_t*) conversion_buffer;
+        source = (T*) conversion_buffer;
         swapIQ(input, source, len);
     }
     uint32_t consumed = 0;
     uint32_t available;
     while (consumed < len) {
         available = float_buffer->get_writeable_samples(len - consumed);
-        convert_s16_f(source + consumed, float_buffer->get_write_pointer(), available);
+        convert(source + consumed, float_buffer->get_write_pointer(), available);
         float_buffer->advance(available);
         consumed += available;
     }
@@ -285,75 +286,54 @@ void Connector::processSamples(int16_t* input, uint32_t len) {
         consumed = 0;
         while (consumed < len) {
             available = uint8_buffer->get_writeable_samples(len - consumed);
-            convert_s16_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
+            convert(source + consumed, uint8_buffer->get_write_pointer(), available);
             uint8_buffer->advance(available);
             consumed += available;
         }
     }
 }
 
-void Connector::swapIQ(float* input, float* output, uint32_t len) {
-    for (uint32_t i = 0; i < len; i++) {
-        output[i] = input[i ^ 1];
+template void Connector::processSamples<float>(float*, uint32_t);
+template void Connector::processSamples<int16_t>(int16_t*, uint32_t);
+template void Connector::processSamples<uint8_t>(uint8_t*, uint32_t);
+
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(uint8_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+        output[i] = ((float) (input[i])) / (UINT8_MAX / 2.0f) - 1.0f;
     }
 }
 
-void Connector::processSamples(float* input, uint32_t len) {
-    uint32_t consumed = 0;
-    uint32_t available;
-    while (consumed < len) {
-        available = float_buffer->get_writeable_samples(len - consumed);
-        if (iqswap) {
-            swapIQ(input + consumed, float_buffer->get_write_pointer(), available);
-        } else {
-            memcpy(float_buffer->get_write_pointer(), input + consumed, available * sizeof(float));
-        }
-        float_buffer->advance(available);
-        consumed += available;
-    }
-    if (rtltcp_port > 0) {
-        float* source = input;
-        if (iqswap) {
-            source = (float*) conversion_buffer;
-            swapIQ(input, source, len);
-        }
-        consumed = 0;
-        while (consumed < len) {
-            available = uint8_buffer->get_writeable_samples(len - consumed);
-            convert_f32_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
-            uint8_buffer->advance(available);
-            consumed += available;
-        }
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(int16_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+        output[i] = (float)input[i] / SHRT_MAX;
     }
 }
 
-void Connector::swapIQ(uint8_t* input, uint8_t* output, uint32_t len) {
-    for (uint32_t i = 0; i < len; i++) {
-        output[i] = input[i ^ 1];
+void Connector::convert(float* input, float* output, uint32_t len) {
+    memcpy(output, input, len * sizeof(float));
+}
+
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(uint8_t* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+        output[i] = input[i] * UCHAR_MAX * 0.5f + 128;
     }
 }
 
-void Connector::processSamples(uint8_t* input, uint32_t len) {
-    uint8_t* source = input;
-    if (iqswap) {
-        source = (uint8_t*) conversion_buffer;
-        swapIQ(input, source, len);
-    }
-    uint32_t consumed = 0;
-    uint32_t available;
-    while (consumed < len) {
-        available = float_buffer->get_writeable_samples(len - consumed);
-        convert_u8_f(source + consumed, float_buffer->get_write_pointer(), available);
-        float_buffer->advance(available);
-        consumed += available;
-    }
-    if (rtltcp_port > 0) {
-        consumed = 0;
-        while (consumed < len) {
-            available = uint8_buffer->get_writeable_samples(len - consumed);
-            memcpy(uint8_buffer->get_write_pointer(), source + consumed, available);
-            uint8_buffer->advance(available);
-            consumed += available;
-        }
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(int16_t* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+        output[i] = input[i] / 32767.0f * 128.0f + 127.4f;
     }
 }
+
+void Connector::convert(float* input, uint8_t* output, uint32_t len) {
+    memcpy(output, input, len * sizeof(float));
+}
+
