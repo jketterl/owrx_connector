@@ -1,6 +1,8 @@
 #include "soapy_connector.hpp"
 #include <iostream>
 #include <algorithm>
+#include <getopt.h>
+#include <vector>
 
 int main (int argc, char** argv) {
     Connector* connector = new SoapyConnector();
@@ -11,7 +13,36 @@ uint32_t SoapyConnector:: get_buffer_size() {
     return soapy_buffer_size;
 };
 
-int SoapyConnector:: open() {
+std::stringstream SoapyConnector::get_usage_string() {
+    std::stringstream s = Connector::get_usage_string();
+    s <<
+        " -a, --antenna           select antenna input\n" <<
+        " -t, --settings          set sdr specific settings\n";
+    return s;
+}
+
+std::vector<struct option> SoapyConnector::getopt_long_options() {
+    std::vector<struct option> long_options = Connector::getopt_long_options();
+    long_options.push_back({"antenna", required_argument, NULL, 'a'});
+    long_options.push_back({"settings", required_argument, NULL, 't'});
+    return long_options;
+}
+
+int SoapyConnector::receive_option(int c, char* optarg) {
+    switch (c) {
+        case 'a':
+            antenna = std::string(optarg);
+            break;
+        case 't':
+            settings = std::string(optarg);
+            break;
+        default:
+            return Connector::receive_option(c, optarg);
+    }
+    return 0;
+}
+
+int SoapyConnector::open() {
     try {
         dev = SoapySDR::Device::make(device_id == nullptr ? "" : std::string(device_id));
         return 0;
@@ -21,7 +52,54 @@ int SoapyConnector:: open() {
     }
 };
 
-int SoapyConnector:: read() {
+int SoapyConnector::setup() {
+    int r = Connector::setup();
+    if (r != 0) return r;
+
+    if (antenna != "") {
+        r = setAntenna(antenna);
+        if (r != 0) {
+            std::cerr << "Setting antenna failed\n";
+            return 1;
+        }
+    }
+
+    if (settings != "") {
+        r = setSettings(settings);
+        if (r != 0) {
+            std::cerr << "Setting settings failed\n";
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int SoapyConnector::setAntenna(std::string antenna) {
+    try {
+        dev->setAntenna(SOAPY_SDR_RX, channel, antenna);
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+        return 1;
+    }
+}
+
+int SoapyConnector::setSettings(std::string settings) {
+    SoapySDR::Kwargs args = SoapySDR::KwargsFromString(settings);
+    for (const auto &p : args) {
+        std::string key = p.first;
+        std::string value = p.second;
+        try {
+            dev->writeSetting(key, value);
+        } catch (const std::exception& e) {
+            std::cerr << "WARNING: setting key " << key << "failed: " << e.what() << "\n";
+        }
+    }
+    return 0;
+}
+
+int SoapyConnector::read() {
     std::string format = SOAPY_SDR_CS16;
     std::vector<std::string> formats = dev->getStreamFormats(SOAPY_SDR_RX, channel);
     // use native CF32 if available
@@ -82,7 +160,7 @@ int SoapyConnector:: read() {
     return 0;
 };
 
-int SoapyConnector:: close() {
+int SoapyConnector::close() {
     try {
         SoapySDR::Device::unmake(dev);
         dev = nullptr;
@@ -93,7 +171,7 @@ int SoapyConnector:: close() {
     }
 };
 
-int SoapyConnector:: set_center_frequency(double frequency) {
+int SoapyConnector::set_center_frequency(double frequency) {
     try {
         dev->setFrequency(SOAPY_SDR_RX, channel, frequency);
         return 0;
@@ -103,7 +181,7 @@ int SoapyConnector:: set_center_frequency(double frequency) {
     }
 };
 
-int SoapyConnector:: set_sample_rate(double sample_rate) {
+int SoapyConnector::set_sample_rate(double sample_rate) {
     try {
         dev->setSampleRate(SOAPY_SDR_RX, channel, sample_rate);
         return 0;
@@ -113,7 +191,24 @@ int SoapyConnector:: set_sample_rate(double sample_rate) {
     }
 };
 
-int SoapyConnector:: set_gain(GainSpec* gain) {
+void SoapyConnector::applyChange(std::string key, std::string value) {
+    int r = 0;
+    if (key == "antenna") {
+        antenna = value;
+        r = setAntenna(antenna);
+    } else if (key == "settings") {
+        settings = value;
+        r = setSettings(settings);
+    } else {
+        Connector::applyChange(key, value);
+        return;
+    }
+    if (r != 0) {
+        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << "\n";
+    }
+}
+
+int SoapyConnector::set_gain(GainSpec* gain) {
     SimpleGainSpec* simple_gain;
     if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
         try {
@@ -139,7 +234,7 @@ int SoapyConnector:: set_gain(GainSpec* gain) {
     return 0;
 };
 
-int SoapyConnector:: set_ppm(int ppm) {
+int SoapyConnector::set_ppm(int ppm) {
     try {
 #if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
         dev->setFrequencyCorrection(SOAPY_SDR_RX, channel, ppm);

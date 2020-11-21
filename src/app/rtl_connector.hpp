@@ -16,17 +16,17 @@ class RtlConnector: public Connector {
     protected:
         std::stringstream get_usage_string() override;
         std::vector<struct option> getopt_long_options() override;
-        int receive_option(int c, char* optarg);
+        int receive_option(int c, char* optarg) override;
         uint32_t get_buffer_size() override;
-        int open() override;
-        int setup() override;
-        int read() override;
-        int stop() override;
-        int close() override;
-        int set_center_frequency(double frequency) override;
-        int set_sample_rate(double sample_rate) override;
-        int set_gain(GainSpec* gain) override;
-        int set_ppm(int32_t ppm) override;
+        virtual int open() override;
+        virtual int setup() override;
+        virtual int read() override;
+        virtual int stop() override;
+        virtual int close() override;
+        virtual int set_center_frequency(double frequency) override;
+        virtual int set_sample_rate(double sample_rate) override;
+        virtual int set_gain(GainSpec* gain) override;
+        virtual int set_ppm(int32_t ppm) override;
         int set_direct_sampling(int direct_sampling);
 #if HAS_RTLSDR_SET_BIAS_TEE
         int set_bias_tee(bool bias_tee);
