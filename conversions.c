@@ -2,7 +2,7 @@
 #include <limits.h>
 
 OWRX_CONNECTOR_TARGET_CLONES
-void convert_u8_f32(uint8_t* restrict input, float* restrict out, uint32_t count) {
+void convert_u8_f(uint8_t* restrict input, float* restrict out, uint32_t count) {
     uint32_t i;
     for (i = 0; i < count; i++) {
         out[i] = ((float) (input[i])) / (UINT8_MAX / 2.0f) - 1.0f;

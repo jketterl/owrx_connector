@@ -1,7 +1,4 @@
 #include "rtl_connector.hpp"
-extern "C" {
-#include "conversions.h"
-}
 #include <cstring>
 #include <stdlib.h>
 #include <iostream>
@@ -112,21 +109,7 @@ void RtlConnector::callback(unsigned char* buf, uint32_t len) {
         std::cerr << "WARNING: invalid buffer size received; skipping input\n";
         return;
     }
-    uint8_t* source = (uint8_t*) buf;
-    if (iqswap) {
-        source = conversion_buffer;
-        uint32_t i;
-        for (i = 0; i < len; i++) {
-            source[i] = buf[i ^ 1];
-        }
-    }
-    convert_u8_f32(source, float_buffer->get_write_pointer(), len);
-    float_buffer->advance(len);
-
-    if (rtltcp_port > 0) {
-        memcpy(uint8_buffer->get_write_pointer(), source, len);
-        uint8_buffer->advance(len);
-    }
+    processSamples((uint8_t*) buf, len);
 }
 
 int RtlConnector::close() {

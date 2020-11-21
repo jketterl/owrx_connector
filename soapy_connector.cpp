@@ -1,10 +1,6 @@
 #include "soapy_connector.hpp"
-extern "C" {
-#include "conversions.h"
-}
 #include <iostream>
 #include <algorithm>
-#include <cstring>
 
 int main (int argc, char** argv) {
     Connector* connector = new SoapyConnector();
@@ -36,14 +32,10 @@ int SoapyConnector:: read() {
 
     void* buf = malloc(soapy_buffer_size * SoapySDR::formatToSize(format));
     void* buffs[] = {buf};
-    void* conversion_buffer = malloc(soapy_buffer_size * SoapySDR::formatToSize(format));
     int samples_read;
     long long timeNs = 0;
     long timeoutNs = 1E6;
     int flags = 0;
-    uint32_t i;
-
-
 
     //SoapySDRKwargs stream_args = {0};
     size_t num_channels = dev->getNumChannels(SOAPY_SDR_RX);
@@ -68,55 +60,9 @@ int SoapyConnector:: read() {
         if (samples_read >= 0) {
             uint32_t len = samples_read * 2;
             if (format == SOAPY_SDR_CS16) {
-                int16_t* source = (int16_t*) buf;
-                if (iqswap) {
-                    source = (int16_t*) conversion_buffer;
-                    for (i = 0; i < len; i++) {
-                        source[i] = ((int16_t *)buf)[i ^ 1];
-                    }
-                }
-                uint32_t consumed = 0;
-                uint32_t available;
-                while (consumed < len) {
-                    available = float_buffer->get_writeable_samples(len - consumed);
-                    convert_s16_f(source + consumed, float_buffer->get_write_pointer(), available);
-                    float_buffer->advance(available);
-                    consumed += available;
-                }
-                if (rtltcp_port > 0) {
-                    consumed = 0;
-                    while (consumed < len) {
-                        available = uint8_buffer->get_writeable_samples(len - consumed);
-                        convert_s16_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
-                        uint8_buffer->advance(available);
-                        consumed += available;
-                    }
-                }
+                processSamples((int16_t*) buf, len);
             } else if (format == SOAPY_SDR_CF32) {
-                float* source = (float*) buf;
-                if (iqswap) {
-                    source = (float*) conversion_buffer;
-                    for (i = 0; i < len; i++) {
-                        source[i] = ((float *)buf)[i ^ 1];
-                    }
-                }
-                uint32_t consumed = 0;
-                uint32_t available;
-                while (consumed < len) {
-                    available = float_buffer->get_writeable_samples(len - consumed);
-                    memcpy(float_buffer->get_write_pointer(), source + consumed, available * sizeof(float));
-                    float_buffer->advance(available);
-                    consumed += available;
-                }
-                if (rtltcp_port > 0) {
-                    consumed = 0;
-                    while (consumed < len) {
-                        available = uint8_buffer->get_writeable_samples(len - consumed);
-                        convert_f32_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
-                        uint8_buffer->advance(available);
-                        consumed += available;
-                    }
-                }
+                processSamples((float*) buf, len);
             }
         } else if (samples_read == SOAPY_SDR_OVERFLOW) {
             // overflows do happen, they are non-fatal. a warning should do

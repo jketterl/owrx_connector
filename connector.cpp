@@ -2,16 +2,22 @@
 #include "version.h"
 #include "iq_connection.hpp"
 #include "control_connection.hpp"
+extern "C" {
+#include "conversions.h"
+}
 #include <stdlib.h>
 #include <algorithm>
 #include <numeric>
 #include <iostream>
+#include <cstring>
 
 void Connector::init_buffers() {
     float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
     if (rtltcp_port > 0) {
         uint8_buffer = new Ringbuffer<uint8_t>(10 * get_buffer_size());
     }
+    // biggest samples that we cane process right now = float
+    conversion_buffer = malloc(get_buffer_size() * sizeof(float));
 }
 
 int Connector::main(int argc, char** argv) {
@@ -253,4 +259,101 @@ bool Connector::convertBooleanValue(std::string input) {
     std::string lower = input;
     std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c){ return std::tolower(c); });
     return lower == "1" || lower == "true";
+}
+
+void Connector::swapIQ(int16_t* input, int16_t* output, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        output[i] = input[i ^ 1];
+    }
+}
+
+void Connector::processSamples(int16_t* input, uint32_t len) {
+    int16_t* source = input;
+    if (iqswap) {
+        source = (int16_t*) conversion_buffer;
+        swapIQ(input, source, len);
+    }
+    uint32_t consumed = 0;
+    uint32_t available;
+    while (consumed < len) {
+        available = float_buffer->get_writeable_samples(len - consumed);
+        convert_s16_f(source + consumed, float_buffer->get_write_pointer(), available);
+        float_buffer->advance(available);
+        consumed += available;
+    }
+    if (rtltcp_port > 0) {
+        consumed = 0;
+        while (consumed < len) {
+            available = uint8_buffer->get_writeable_samples(len - consumed);
+            convert_s16_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
+            uint8_buffer->advance(available);
+            consumed += available;
+        }
+    }
+}
+
+void Connector::swapIQ(float* input, float* output, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        output[i] = input[i ^ 1];
+    }
+}
+
+void Connector::processSamples(float* input, uint32_t len) {
+    uint32_t consumed = 0;
+    uint32_t available;
+    while (consumed < len) {
+        available = float_buffer->get_writeable_samples(len - consumed);
+        if (iqswap) {
+            swapIQ(input + consumed, float_buffer->get_write_pointer(), available);
+        } else {
+            memcpy(float_buffer->get_write_pointer(), input + consumed, available * sizeof(float));
+        }
+        float_buffer->advance(available);
+        consumed += available;
+    }
+    if (rtltcp_port > 0) {
+        float* source = input;
+        if (iqswap) {
+            source = (float*) conversion_buffer;
+            swapIQ(input, source, len);
+        }
+        consumed = 0;
+        while (consumed < len) {
+            available = uint8_buffer->get_writeable_samples(len - consumed);
+            convert_f32_u8(source + consumed, uint8_buffer->get_write_pointer(), available);
+            uint8_buffer->advance(available);
+            consumed += available;
+        }
+    }
+}
+
+void Connector::swapIQ(uint8_t* input, uint8_t* output, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        output[i] = input[i ^ 1];
+    }
+}
+
+void Connector::processSamples(uint8_t* input, uint32_t len) {
+    uint8_t* source = input;
+    if (iqswap) {
+        source = (uint8_t*) conversion_buffer;
+        swapIQ(input, source, len);
+    }
+    uint32_t consumed = 0;
+    uint32_t available;
+    while (consumed < len) {
+        available = float_buffer->get_writeable_samples(len - consumed);
+        convert_u8_f(source + consumed, float_buffer->get_write_pointer(), available);
+        float_buffer->advance(available);
+        consumed += available;
+    }
+    if (rtltcp_port > 0) {
+        consumed = 0;
+        while (consumed < len) {
+            available = uint8_buffer->get_writeable_samples(len - consumed);
+            memcpy(uint8_buffer->get_write_pointer(), source + consumed, available);
+            uint8_buffer->advance(available);
+            consumed += available;
+        }
+    }
 }
