@@ -1,6 +1,8 @@
 #include "owrx/ringbuffer.hpp"
 #include <cstdlib>
 
+using namespace Owrx;
+
 template <typename T>
 Ringbuffer<T>::Ringbuffer(uint32_t new_len) {
     len = new_len;

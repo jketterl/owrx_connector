@@ -7,14 +7,18 @@
 #include <thread>
 #include <stdint.h>
 
-class ControlSocket {
-    public:
-        ControlSocket(Connector* connector, uint16_t port);
-    private:
-        Connector* connector;
-        int sock;
-        bool run = true;
-        std::thread thread;
+namespace Owrx {
 
-        void loop();
-};
+    class ControlSocket {
+        public:
+            ControlSocket(Connector* connector, uint16_t port);
+        private:
+            Connector* connector;
+            int sock;
+            bool run = true;
+            std::thread thread;
+
+            void loop();
+    };
+
+}

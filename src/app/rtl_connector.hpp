@@ -7,6 +7,8 @@
 // this should be the default according to rtl-sdr.h
 #define RTL_BUFFER_SIZE 16 * 32 * 512
 
+using namespace Owrx;
+
 class RtlConnector: public Connector {
     public:
         void callback(unsigned char* buf, uint32_t len);

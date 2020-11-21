@@ -4,6 +4,8 @@
 #include <cstring>
 #include <unistd.h>
 
+using namespace Owrx;
+
 template <typename T>
 IQSocket<T>::IQSocket(uint16_t port, Ringbuffer<T>* new_ringbuffer) {
     ringbuffer = new_ringbuffer;

@@ -9,6 +9,8 @@
 #include <climits>
 #include <cstring>
 
+using namespace Owrx;
+
 void Connector::init_buffers() {
     float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
     if (rtltcp_port > 0) {

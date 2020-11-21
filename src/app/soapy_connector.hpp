@@ -5,6 +5,8 @@
 #include <SoapySDR/Version.hpp>
 #include <SoapySDR/Formats.hpp>
 
+using namespace Owrx;
+
 #define SOAPY_BUFFER_SIZE 64512 * 4
 
 class SoapyConnector: public Connector {

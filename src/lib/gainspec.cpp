@@ -1,6 +1,8 @@
 #include "owrx/gainspec.hpp"
 #include <algorithm>
 
+using namespace Owrx;
+
 GainSpec* GainSpec::parse(std::string* input) {
     std::string lower = *input;
     std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c){ return std::tolower(c); });

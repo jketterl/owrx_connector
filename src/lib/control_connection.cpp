@@ -3,6 +3,8 @@
 #include <cstring>
 #include <string>
 
+using namespace Owrx;
+
 ControlSocket::ControlSocket(Connector* new_connector, uint16_t port) {
     connector = new_connector;
 
