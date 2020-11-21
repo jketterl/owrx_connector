@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <numeric>
 #include <iostream>
-#include <cstring>
 #include <climits>
+#include <cstring>
 
 void Connector::init_buffers() {
     float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
@@ -314,7 +314,7 @@ void Connector::convert(int16_t* __restrict__ input, float* __restrict__ output,
 }
 
 void Connector::convert(float* input, float* output, uint32_t len) {
-    memcpy(output, input, len * sizeof(float));
+    std::memcpy(output, input, len * sizeof(float));
 }
 
 OWRX_CONNECTOR_TARGET_CLONES
@@ -334,6 +334,6 @@ void Connector::convert(int16_t* __restrict__ input, uint8_t* __restrict__ outpu
 }
 
 void Connector::convert(float* input, uint8_t* output, uint32_t len) {
-    memcpy(output, input, len * sizeof(float));
+    std::memcpy(output, input, len * sizeof(float));
 }
 
