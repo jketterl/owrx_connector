@@ -10,6 +10,8 @@
 #include <cstring>
 #include <csignal>
 #include <functional>
+#include <thread>
+#include <chrono>
 
 using namespace Owrx;
 
@@ -55,28 +57,32 @@ int Connector::main(int argc, char** argv) {
         rtltcp_socket->start();
     }
 
-    r = open();
-    if (r != 0) {
-        std::cerr << "Connector::open() failed\n";
-        return 1;
-    }
+    while (run) {
+        r = open();
+        if (r != 0) {
+            std::cerr << "Connector::open() failed\n";
+            return 1;
+        }
 
-    r = setup();
-    if (r != 0) {
-        std::cerr << "Connector::setup() failed\n";
-        return 2;
-    }
+        r = setup();
+        if (r != 0) {
+            std::cerr << "Connector::setup() failed\n";
+            return 2;
+        }
 
-    r = read();
-    if (r != 0) {
-        std::cerr << "Connector::read() failed\n";
-        return 3;
-    }
+        r = read();
+        if (r != 0) {
+            std::cerr << "Connector::read() failed\n";
+            return 3;
+        }
 
-    r = close();
-    if (r != 0) {
-        std::cerr << "Connector::close() failed\n";
-        return 4;
+        r = close();
+        if (r != 0) {
+            std::cerr << "Connector::close() failed\n";
+            return 4;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
 
     return 0;

@@ -80,7 +80,6 @@ int SoapyConnector:: read() {
 
     dev->deactivateStream(stream);
 
-
     return 0;
 };
 

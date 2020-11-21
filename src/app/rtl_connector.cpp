@@ -101,7 +101,8 @@ int RtlConnector::read() {
     if (r != 0) {
         std::cerr << "WARNING: rtlsdr_read_async failed with r = " << r << "\n";
     }
-    return r;
+
+    return 0;
 }
 
 int RtlConnector::stop() {
