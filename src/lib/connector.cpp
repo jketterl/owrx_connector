@@ -35,7 +35,7 @@ int Connector::main(int argc, char** argv) {
     std::signal(SIGTERM, &signal_callback_function);
     std::signal(SIGQUIT, &signal_callback_function);
 
-    int r = get_arguments(argc, argv);
+    int r = parse_arguments(argc, argv);
     if (r == 1) {
         // print usage and exit
         return 0;
@@ -109,7 +109,7 @@ std::vector<struct option> Connector::getopt_long_options() {
     };
 }
 
-int Connector::get_arguments(int argc, char** argv) {
+int Connector::parse_arguments(int argc, char** argv) {
     std::vector<struct option> long_options = getopt_long_options();
     long_options.push_back({ NULL, 0, NULL, 0 });
 
@@ -346,12 +346,8 @@ void Connector::convert(float* input, float* output, uint32_t len) {
     std::memcpy(output, input, len * sizeof(float));
 }
 
-OWRX_CONNECTOR_TARGET_CLONES
-void Connector::convert(uint8_t* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
-    uint32_t i;
-    for (i = 0; i < len; i++) {
-        output[i] = input[i] * UCHAR_MAX * 0.5f + 128;
-    }
+void Connector::convert(uint8_t* input, uint8_t* output, uint32_t len) {
+    std::memcpy(output, input, len * sizeof(uint8_t));
 }
 
 OWRX_CONNECTOR_TARGET_CLONES
@@ -362,7 +358,11 @@ void Connector::convert(int16_t* __restrict__ input, uint8_t* __restrict__ outpu
     }
 }
 
-void Connector::convert(float* input, uint8_t* output, uint32_t len) {
-    std::memcpy(output, input, len * sizeof(float));
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(float* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+        output[i] = input[i] * UCHAR_MAX * 0.5f + 128;
+    }
 }
 

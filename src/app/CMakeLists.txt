@@ -30,3 +30,7 @@ endif()
 if (NOT RTLSDR_FOUND AND NOT SoapySDR_FOUND)
     message(WARNING "WARNING: Neither SoapySDR nor rtlsdr libraries have been found, only rtl_tcp_conector will be built.")
 endif()
+
+add_executable(rtl_tcp_connector rtl_tcp_connector.cpp)
+target_link_libraries(rtl_tcp_connector owrx-connector ${LIBS})
+install(TARGETS rtl_tcp_connector DESTINATION bin)

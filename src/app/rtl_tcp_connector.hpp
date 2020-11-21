@@ -1,0 +1,34 @@
+#pragma once
+
+#include "owrx/connector.hpp"
+
+using namespace Owrx;
+
+#define RTL_BUFFER_SIZE 16 * 32 * 512
+
+// the basic form which is expected by rtl_tcp
+// the mappings for the commands can be found in the rtl_tcp source code
+struct command {
+    unsigned char cmd;
+    unsigned int param;
+}__attribute((packed));
+
+class RtlTcpConnector: public Connector {
+    protected:
+        virtual int parse_arguments(int argc, char** argv) override;
+        virtual uint32_t get_buffer_size() override;
+        virtual int open() override;
+        virtual int read() override;
+        virtual int close() override;
+        virtual int set_center_frequency(double frequency) override;
+        virtual int set_sample_rate(double sample_rate) override;
+        virtual int set_gain(GainSpec* gain) override;
+        virtual int set_ppm(int ppm) override;
+    private:
+        uint32_t rtl_buffer_size = RTL_BUFFER_SIZE;
+        std::string host = "127.0.0.1";
+        uint16_t port = 1234;
+        int sock;
+
+        int send_command(struct command cmd);
+};

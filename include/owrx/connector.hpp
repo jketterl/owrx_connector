@@ -28,6 +28,7 @@ namespace Owrx {
             void processSamples(T* input, uint32_t len);
 
             // methods that come with a reasonable default behaviour, but can be overridden
+            virtual int parse_arguments(int argc, char** argv);
             virtual std::stringstream get_usage_string();
             virtual std::vector<struct option> getopt_long_options();
             virtual int receive_option(int c, char* optarg);
@@ -58,7 +59,6 @@ namespace Owrx {
             void* conversion_buffer;
 
             void init_buffers();
-            int get_arguments(int argc, char** argv);
             void print_usage();
             void print_version();
 

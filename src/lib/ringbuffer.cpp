@@ -1,6 +1,8 @@
 #include "owrx/ringbuffer.hpp"
 #include <cstdlib>
 
+#include <iostream>
+
 using namespace Owrx;
 
 template <typename T>

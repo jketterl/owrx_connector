@@ -31,14 +31,7 @@ endif()
 
 SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
-add_library(version STATIC version.c)
-target_include_directories (version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-add_executable(rtl_tcp_connector rtl_tcp_connector.c strtolower.c)
-target_link_libraries(rtl_tcp_connector version ${LIBS})
-install(TARGETS rtl_tcp_connector DESTINATION bin)
 
 add_subdirectory(src/lib)
 add_subdirectory(src/app)
