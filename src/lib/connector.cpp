@@ -82,7 +82,7 @@ int Connector::main(int argc, char** argv) {
             return 4;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        if (run) std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
 
     return 0;
