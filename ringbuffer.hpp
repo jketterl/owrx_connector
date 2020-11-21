@@ -1,5 +1,4 @@
 #pragma once
-#pragma GCC visibility push(default)
 
 #include <stdint.h>
 #include <mutex>

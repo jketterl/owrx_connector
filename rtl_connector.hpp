@@ -1,7 +1,6 @@
 #pragma once
 
 #include "connector.hpp"
-#include "ringbuffer.hpp"
 #include "gainspec.hpp"
 #include <stdint.h>
 #include <rtl-sdr.h>

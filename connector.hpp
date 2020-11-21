@@ -15,9 +15,6 @@ class Connector {
         virtual void applyChange(std::string key, std::string value);
     protected:
         char* device_id = nullptr;
-        Ringbuffer<float>* float_buffer;
-        Ringbuffer<uint8_t>* uint8_buffer;
-        void* conversion_buffer;
         bool iqswap = false;
         int rtltcp_port = -1;
 
@@ -51,6 +48,9 @@ class Connector {
         double sample_rate;
         int32_t ppm;
         GainSpec* gain = new AutoGainSpec();
+        Ringbuffer<float>* float_buffer;
+        Ringbuffer<uint8_t>* uint8_buffer;
+        void* conversion_buffer;
 
         void init_buffers();
         int get_arguments(int argc, char** argv);
