@@ -147,7 +147,7 @@ int SoapyConnector::read() {
         } else if (samples_read == SOAPY_SDR_TIMEOUT) {
             // timeout should not break the read loop.
             // TODO or should they? I tried, but airspyhf devices will end up here on sample rate changes.
-            std::cerr << "WARNING: SoapySDRDevice_readStream timeout!\n";
+            std::cerr << "WARNING: SoapySDR::Device::readStream timeout!\n";
         } else {
             // other errors should break the read loop.
             std::cerr << "ERROR: Soapy error " << samples_read << "\n";
