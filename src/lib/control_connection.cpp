@@ -1,7 +1,7 @@
 #include "control_connection.hpp"
-#include <cstdio>
 #include <cstring>
 #include <string>
+#include <iostream>
 
 using namespace Owrx;
 
@@ -11,9 +11,9 @@ ControlSocket::ControlSocket(Connector* new_connector, uint16_t port) {
     struct sockaddr_in local;
     const char* addr = "127.0.0.1";
 
-    fprintf(stderr, "setting up control socket...\n");
+    std::cerr << "setting up control socket...\n";
 
-    memset(&local, 0, sizeof(local));
+    std::memset(&local, 0, sizeof(local));
     local.sin_family = AF_INET;
     local.sin_port = htons(port);
     local.sin_addr.s_addr = inet_addr(addr);
@@ -24,7 +24,7 @@ ControlSocket::ControlSocket(Connector* new_connector, uint16_t port) {
     bind(sock, (struct sockaddr *)&local, sizeof(local));
     listen(sock, 1);
 
-    fprintf(stderr, "control socket started on %i\n", port);
+    std::cerr << "control socket started on " << port << "\n";
 
     thread = std::thread([this] { loop(); });
 }
@@ -36,7 +36,7 @@ void ControlSocket::loop() {
     while (run) {
         socklen_t rlen = sizeof(remote);
         int control_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
-        fprintf(stderr, "control connection established\n");
+        std::cerr << "control connection established\n";
 
         bool run = true;
         uint8_t buf[256];
@@ -54,7 +54,7 @@ void ControlSocket::loop() {
 
                     size_t colon_pos = line.find(':');
                     if (colon_pos == std::string::npos) {
-                        fprintf(stderr, "invalid message: \"%s\"\n", line.c_str());
+                        std::cerr << "invalid message: \"" << line << "\"\n";
                         continue;
                     }
 
@@ -65,6 +65,6 @@ void ControlSocket::loop() {
                 }
             }
         }
-        fprintf(stderr, "control connection ended\n");
+        std::cerr << "control connection ended\n";
     }
 }

@@ -26,7 +26,6 @@ int SoapyConnector:: read() {
     std::vector<std::string> formats = dev->getStreamFormats(SOAPY_SDR_RX, channel);
     // use native CF32 if available
     if (std::find(formats.begin(), formats.end(), SOAPY_SDR_CF32) != formats.end()) {
-        fprintf(stderr, "using soapy f32 conversion\n");
         format = SOAPY_SDR_CF32;
     }
 
@@ -40,7 +39,7 @@ int SoapyConnector:: read() {
     //SoapySDRKwargs stream_args = {0};
     size_t num_channels = dev->getNumChannels(SOAPY_SDR_RX);
     if (((size_t) channel) >= num_channels){
-        fprintf(stderr, "Invalid channel %d selected\n", (int)channel);
+        std::cerr << "Invalid channel " << channel << " selected\n";
         return 9;
     }
 
@@ -55,7 +54,7 @@ int SoapyConnector:: read() {
 
     while (run) {
         samples_read = dev->readStream(stream, buffs, soapy_buffer_size, flags, timeNs, timeoutNs);
-        // fprintf(stderr, "samples read from sdr: %i\n", samples_read);
+        // std::cerr << "samples read from sdr: " << sample_read << "\n";
 
         if (samples_read >= 0) {
             uint32_t len = samples_read * 2;
@@ -66,14 +65,14 @@ int SoapyConnector:: read() {
             }
         } else if (samples_read == SOAPY_SDR_OVERFLOW) {
             // overflows do happen, they are non-fatal. a warning should do
-            fprintf(stderr, "WARNING: Soapy overflow\n");
+            std::cerr << "WARNING: Soapy overflow\n";
         } else if (samples_read == SOAPY_SDR_TIMEOUT) {
             // timeout should not break the read loop.
             // TODO or should they? I tried, but airspyhf devices will end up here on sample rate changes.
-            fprintf(stderr, "WARNING: SoapySDRDevice_readStream timeout!\n");
+            std::cerr << "WARNING: SoapySDRDevice_readStream timeout!\n";
         } else {
             // other errors should break the read loop.
-            fprintf(stderr, "ERROR: Soapy error %i\n", samples_read);
+            std::cerr << "ERROR: Soapy error " << samples_read << "\n";
             break;
         }
     }

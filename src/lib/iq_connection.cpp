@@ -1,8 +1,8 @@
 #include "iq_connection.hpp"
 
-#include <cstdio>
 #include <cstring>
 #include <unistd.h>
+#include <iostream>
 
 using namespace Owrx;
 
@@ -13,7 +13,7 @@ IQSocket<T>::IQSocket(uint16_t port, Ringbuffer<T>* new_ringbuffer) {
     struct sockaddr_in local;
     const char* addr = "127.0.0.1";
 
-    memset(&local, 0, sizeof(local));
+    std::memset(&local, 0, sizeof(local));
     local.sin_family = AF_INET;
     local.sin_port = htons(port);
     local.sin_addr.s_addr = inet_addr(addr);
@@ -23,7 +23,7 @@ IQSocket<T>::IQSocket(uint16_t port, Ringbuffer<T>* new_ringbuffer) {
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
     bind(sock, (struct sockaddr *)&local, sizeof(local));
 
-    fprintf(stderr, "socket setup complete, waiting for connections\n");
+    std::cerr << "socket setup complete, waiting for connections\n";
 
     listen(sock, 1);
 }
@@ -60,7 +60,7 @@ IQConnection<T>::IQConnection(int client_sock, Ringbuffer<T>* new_ringbuffer) {
 
 template <typename T>
 void IQConnection<T>::loop() {
-    fprintf(stderr, "client connection established\n");
+    std::cerr << "client connection established\n";
 
     uint32_t read_pos = ringbuffer->get_write_pos();
     ssize_t sent;
@@ -78,7 +78,7 @@ void IQConnection<T>::loop() {
             }
         }
     }
-    fprintf(stderr, "closing client socket\n");
+    std::cerr << "closing client socket\n";
     close(sock);
 }
 
