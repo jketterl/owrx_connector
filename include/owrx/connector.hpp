@@ -13,12 +13,14 @@ namespace Owrx {
     class Connector {
         public:
             int main(int argc, char** argv);
+            void handle_signal(int signal);
 
             virtual void applyChange(std::string key, std::string value);
         protected:
             char* device_id = nullptr;
             bool iqswap = false;
             int rtltcp_port = -1;
+            bool run = true;
 
             bool convertBooleanValue(std::string input);
 
@@ -32,6 +34,7 @@ namespace Owrx {
             virtual int set_iqswap(bool iqswap);
             virtual int set_rtltcp_port(int rtltcp_port);
             virtual int setup();
+            virtual int stop();
 
             // methods that must be overridden for the individual hardware
             virtual uint32_t get_buffer_size() = 0;

@@ -104,6 +104,15 @@ int RtlConnector::read() {
     return r;
 }
 
+int RtlConnector::stop() {
+    int r = rtlsdr_cancel_async(dev);
+    if (r != 0) {
+        std::cerr << "WARNING: rtlsdr_cancel_async failed\n";
+        return r;
+    }
+    return Connector::stop();
+}
+
 void RtlConnector::callback(unsigned char* buf, uint32_t len) {
     if (len != rtl_buffer_size) {
         std::cerr << "WARNING: invalid buffer size received; skipping input\n";

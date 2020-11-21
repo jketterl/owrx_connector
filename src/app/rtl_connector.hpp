@@ -21,6 +21,7 @@ class RtlConnector: public Connector {
         int open() override;
         int setup() override;
         int read() override;
+        int stop() override;
         int close() override;
         int set_center_frequency(double frequency) override;
         int set_sample_rate(double sample_rate) override;

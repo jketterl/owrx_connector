@@ -23,5 +23,4 @@ class SoapyConnector: public Connector {
         uint32_t soapy_buffer_size = SOAPY_BUFFER_SIZE;
         SoapySDR::Device* dev = nullptr;
         size_t channel = 0;
-        bool run = true;
 };

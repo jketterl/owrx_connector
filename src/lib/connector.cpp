@@ -8,6 +8,8 @@
 #include <iostream>
 #include <climits>
 #include <cstring>
+#include <csignal>
+#include <functional>
 
 using namespace Owrx;
 
@@ -20,7 +22,17 @@ void Connector::init_buffers() {
     conversion_buffer = malloc(get_buffer_size() * sizeof(float));
 }
 
+std::function<void(int)> signal_callback_wrapper;
+void signal_callback_function(int value) {
+    signal_callback_wrapper(value);
+}
+
 int Connector::main(int argc, char** argv) {
+    signal_callback_wrapper = std::bind(&Connector::handle_signal, this, std::placeholders::_1);
+    std::signal(SIGINT, &signal_callback_function);
+    std::signal(SIGTERM, &signal_callback_function);
+    std::signal(SIGQUIT, &signal_callback_function);
+
     int r = get_arguments(argc, argv);
     if (r == 1) {
         // print usage and exit
@@ -68,6 +80,11 @@ int Connector::main(int argc, char** argv) {
     }
 
     return 0;
+}
+
+void Connector::handle_signal(int signal) {
+    std::cerr << "received signal: " << signal << "\n";
+    stop();
 }
 
 std::vector<struct option> Connector::getopt_long_options() {
@@ -217,6 +234,11 @@ int Connector::setup() {
         return 7;
     }
 
+    return 0;
+}
+
+int Connector::stop() {
+    run = false;
     return 0;
 }
 
