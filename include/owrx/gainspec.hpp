@@ -2,6 +2,7 @@
 #pragma GCC visibility push(default)
 
 #include <string>
+#include <map>
 
 namespace Owrx {
     class GainSpec {
@@ -19,5 +20,14 @@ namespace Owrx {
             float getValue();
         private:
             float value;
+    };
+
+    class MultiGainSpec: public GainSpec {
+        public:
+            MultiGainSpec(std::map<std::string, std::string> gains);
+            MultiGainSpec(std::string unparsed);
+            std::map<std::string, std::string> getValue();
+        private:
+            std::map<std::string, std::string> gains;
     };
 }

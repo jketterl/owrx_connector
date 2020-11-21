@@ -210,6 +210,7 @@ void SoapyConnector::applyChange(std::string key, std::string value) {
 
 int SoapyConnector::set_gain(GainSpec* gain) {
     SimpleGainSpec* simple_gain;
+    MultiGainSpec* multi_gain;
     if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
         try {
             dev->setGainMode(SOAPY_SDR_RX, channel, true);
@@ -218,14 +219,24 @@ int SoapyConnector::set_gain(GainSpec* gain) {
             return 1;
         }
     } else if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
-        try{
+        try {
             dev->setGainMode(SOAPY_SDR_RX, channel, false);
             dev->setGain(SOAPY_SDR_RX, channel, simple_gain->getValue());
         } catch (const std::exception& e) {
             std::cerr << e.what() << "\n";
             return 1;
         }
-    // TODO: combined gain spec
+    } else if ((multi_gain = dynamic_cast<MultiGainSpec*>(gain)) != nullptr) {
+        std::map<std::string, std::string> gains = multi_gain->getValue();
+        try {
+            dev->setGainMode(SOAPY_SDR_RX, channel, false);
+            for (const auto &p : gains) {
+                dev->setGain(SOAPY_SDR_RX, channel, p.first, stol(p.second));
+            }
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << "\n";
+            return 1;
+        }
     } else {
         std::cerr << "unsupported gain settings\n";
         return 100;
