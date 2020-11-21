@@ -53,9 +53,7 @@ int SoapyConnector::open() {
 };
 
 int SoapyConnector::setup() {
-    int r = Connector::setup();
-    if (r != 0) return r;
-
+    int r;
     if (antenna != "") {
         r = setAntenna(antenna);
         if (r != 0) {
@@ -63,6 +61,9 @@ int SoapyConnector::setup() {
             return 1;
         }
     }
+
+    r = Connector::setup();
+    if (r != 0) return r;
 
     if (settings != "") {
         r = setSettings(settings);
