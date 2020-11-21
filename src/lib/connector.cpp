@@ -1,5 +1,4 @@
-#include "connector.hpp"
-#include "version.h"
+#include "owrx/connector.hpp"
 #include "iq_connection.hpp"
 #include "control_connection.hpp"
 #include "fmv.h"

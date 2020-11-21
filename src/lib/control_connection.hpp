@@ -1,6 +1,6 @@
 #pragma once
 
-#include "connector.hpp"
+#include "owrx/connector.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

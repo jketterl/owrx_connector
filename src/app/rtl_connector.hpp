@@ -1,7 +1,6 @@
 #pragma once
 
-#include "connector.hpp"
-#include "gainspec.hpp"
+#include "owrx/connector.hpp"
 #include <stdint.h>
 #include <rtl-sdr.h>
 

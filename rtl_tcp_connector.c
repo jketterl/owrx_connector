@@ -12,7 +12,7 @@
 #include <pthread.h>
 #include <netdb.h>
 #include "version.h"
-#include "fmv.h"
+#include "src/lib/fmv.h"
 #include "connector_params.h"
 #include "shims.h"
 #include "control_worker_args.h"

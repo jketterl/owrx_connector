@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <thread>
-#include "ringbuffer.hpp"
+#include "owrx/ringbuffer.hpp"
 
 template <typename T>
 class IQSocket {

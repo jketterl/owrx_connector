@@ -1,6 +1,6 @@
 #pragma once
 
-#include "connector.hpp"
+#include "owrx/connector.hpp"
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Version.hpp>
 #include <SoapySDR/Formats.hpp>

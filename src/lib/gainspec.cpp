@@ -1,4 +1,4 @@
-#include "gainspec.hpp"
+#include "owrx/gainspec.hpp"
 #include <algorithm>
 
 GainSpec* GainSpec::parse(std::string* input) {

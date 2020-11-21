@@ -5,6 +5,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 project (owrx-connector VERSION 0.4.0)
+add_compile_definitions(VERSION="${CMAKE_PROJECT_VERSION}")
 
 # these are conflicting settings in older SoapySDR cmake files.
 # enable for testing purposes.
@@ -15,11 +16,7 @@ include(CheckFunctionExists)
 include(cmake/DetectIfunc.cmake)
 include(GNUInstallDirs)
 
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
-
 find_package(Threads REQUIRED)
-find_package(RTLSDR)
-find_package(SoapySDR "0.5")
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
 SET(CMAKE_C_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
@@ -37,42 +34,14 @@ SET(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 add_library(version STATIC version.c)
 target_include_directories (version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(owrx-connector SHARED connector.cpp ringbuffer.cpp iq_connection.cpp control_connection.cpp gainspec.cpp)
-target_link_libraries(owrx-connector ${LIBS})
-set_target_properties(owrx-connector PROPERTIES VERSION ${PROJECT_VERSION})
-install(TARGETS owrx-connector LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-if (RTLSDR_FOUND)
-    SET(RTL_LIBS ${LIBS} ${RTLSDR_LIBRARY})
-    INCLUDE_DIRECTORIES("${RTLSDR_INCLUDE_DIRS}")
-
-    SET(CMAKE_REQUIRED_LIBRARIES ${RTLSDR_LIBRARY})
-    check_function_exists(rtlsdr_set_bias_tee HAS_RTLSDR_SET_BIAS_TEE)
-    UNSET(CMAKE_REQUIRED_LIBRARIES)
-
-    add_executable(rtl_connector rtl_connector.cpp)
-    if (HAS_RTLSDR_SET_BIAS_TEE)
-        target_compile_definitions(rtl_connector PUBLIC HAS_RTLSDR_SET_BIAS_TEE)
-    endif()
-    target_link_libraries(rtl_connector owrx-connector ${RTL_LIBS})
-    install(TARGETS rtl_connector DESTINATION bin)
-endif()
-
-if (SoapySDR_FOUND)
-    SET(SOAPY_LIBS ${LIBS} ${SoapySDR_LIBRARIES})
-    INCLUDE_DIRECTORIES("${SoapySDR_INCLUDE_DIRS}")
-    add_executable(soapy_connector soapy_connector.cpp)
-    target_link_libraries(soapy_connector owrx-connector ${SOAPY_LIBS})
-    install(TARGETS soapy_connector DESTINATION bin)
-endif()
-
-if (NOT RTLSDR_FOUND AND NOT SoapySDR_FOUND)
-    message(WARNING "WARNING: Neither SoapySDR nor rtlsdr libraries have been found, only rtl_tcp_conector will be built.")
-endif()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_executable(rtl_tcp_connector rtl_tcp_connector.c strtolower.c)
 target_link_libraries(rtl_tcp_connector version ${LIBS})
 install(TARGETS rtl_tcp_connector DESTINATION bin)
+
+add_subdirectory(src/lib)
+add_subdirectory(src/app)
 
 SET(CPACK_GENERATOR "DEB")
 SET(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)

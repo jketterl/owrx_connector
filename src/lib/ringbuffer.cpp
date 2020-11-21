@@ -1,4 +1,4 @@
-#include "ringbuffer.hpp"
+#include "owrx/ringbuffer.hpp"
 #include <cstdlib>
 
 template <typename T>
