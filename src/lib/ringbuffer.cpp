@@ -1,4 +1,4 @@
-#include "owrx/ringbuffer.hpp"
+#include "ringbuffer.hpp"
 #include <cstdlib>
 
 #include <iostream>

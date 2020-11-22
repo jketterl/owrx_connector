@@ -1,4 +1,5 @@
 #include "rtl_connector.hpp"
+#include "owrx/gainspec.hpp"
 #include <cstring>
 #include <stdlib.h>
 #include <iostream>

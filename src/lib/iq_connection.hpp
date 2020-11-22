@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <thread>
-#include "owrx/ringbuffer.hpp"
+#include "ringbuffer.hpp"
 
 namespace Owrx {
 

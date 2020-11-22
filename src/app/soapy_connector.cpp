@@ -1,4 +1,5 @@
 #include "soapy_connector.hpp"
+#include "owrx/gainspec.hpp"
 #include <iostream>
 #include <algorithm>
 #include <getopt.h>

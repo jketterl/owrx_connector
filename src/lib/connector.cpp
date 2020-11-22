@@ -1,4 +1,6 @@
 #include "owrx/connector.hpp"
+#include "owrx/gainspec.hpp"
+#include "ringbuffer.hpp"
 #include "iq_connection.hpp"
 #include "control_connection.hpp"
 #include "fmv.h"
@@ -14,6 +16,10 @@
 #include <chrono>
 
 using namespace Owrx;
+
+Connector::Connector() {
+    gain = new AutoGainSpec();
+}
 
 void Connector::init_buffers() {
     float_buffer = new Ringbuffer<float>(10 * get_buffer_size());

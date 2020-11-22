@@ -1,8 +1,6 @@
 #pragma once
 #pragma GCC visibility push(default)
 
-#include "ringbuffer.hpp"
-#include "gainspec.hpp"
 #include <string>
 #include <sstream>
 #include <getopt.h>
@@ -10,8 +8,13 @@
 
 namespace Owrx {
 
+    // forward class definitions for the internal API
+    class GainSpec;
+    template <typename T> class Ringbuffer;
+
     class Connector {
         public:
+            Connector();
             int main(int argc, char** argv);
             void handle_signal(int signal);
 
@@ -53,7 +56,7 @@ namespace Owrx {
             double center_frequency;
             double sample_rate;
             int32_t ppm;
-            GainSpec* gain = new AutoGainSpec();
+            GainSpec* gain;
             Ringbuffer<float>* float_buffer;
             Ringbuffer<uint8_t>* uint8_buffer;
             void* conversion_buffer;

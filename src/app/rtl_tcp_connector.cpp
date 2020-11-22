@@ -1,4 +1,5 @@
 #include "rtl_tcp_connector.hpp"
+#include "owrx/gainspec.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
