@@ -1,4 +1,5 @@
 #include "iq_connection.hpp"
+#include "shims.h"
 
 #include <cstring>
 #include <unistd.h>
