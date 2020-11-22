@@ -16,6 +16,36 @@ uint32_t RtlTcpConnector::get_buffer_size() {
     return rtl_buffer_size;
 }
 
+std::stringstream RtlTcpConnector::get_usage_string() {
+    std::stringstream s = Connector::get_usage_string();
+    s <<
+        " -b, --biastee           enable bias-tee voltage if supported by hardware\n" <<
+        " -e, --directsampling    enable direct sampling on the specified input\n" <<
+        "                         (0 = disabled, 1 = I-input, 2 = Q-input)\n";
+    return s;
+}
+
+std::vector<struct option> RtlTcpConnector::getopt_long_options(){
+    std::vector<struct option> long_options = Connector::getopt_long_options();
+    long_options.push_back({"directsampling", required_argument, NULL, 'e'});
+    long_options.push_back({"biastee", no_argument, NULL, 'b'});
+    return long_options;
+}
+
+int RtlTcpConnector::receive_option(int c, char* optarg) {
+    switch (c) {
+        case 'b':
+            bias_tee = true;
+            break;
+        case 'e':
+            direct_sampling = atoi(optarg);
+            break;
+        default:
+            return Connector::receive_option(c, optarg);
+    }
+    return 0;
+}
+
 int RtlTcpConnector::parse_arguments(int argc, char** argv) {
     int r = Connector::parse_arguments(argc, argv);
     if (r != 0) return r;
@@ -69,6 +99,27 @@ int RtlTcpConnector::send_command(struct command cmd) {
     return len == sent ? 0 : -1;
 }
 
+int RtlTcpConnector::setup() {
+    int r = Connector::setup();
+    if (r != 0) return r;
+
+    r = set_bias_tee( bias_tee);
+    if (r != 0) {
+        std::cerr << "setting biastee failed\n";
+        return 10;
+    }
+
+    if (direct_sampling >= 0 && direct_sampling <= 2) {
+        r = set_direct_sampling(direct_sampling);
+        if (r != 0) {
+            std::cerr << "setting direct sampling mode failed\n";
+            return 11;
+        }
+    }
+
+    return 0;
+}
+
 int RtlTcpConnector::read() {
     ssize_t bytes_read;
     uint8_t* buf = (uint8_t*) malloc(rtl_buffer_size);
@@ -91,14 +142,6 @@ int RtlTcpConnector::read() {
 int RtlTcpConnector::close() {
     return ::close(sock);
 }
-
-/*
-    // send initial configuration
-    if (params->directsampling >= 0 && params->directsampling <= 2) {
-        send_command(params->socket, (struct command) {0x09, htonl(params->directsampling)});
-    }
-    send_command(params->socket, (struct command) {0x0e, htonl((unsigned int) params->biastee)});
-*/
 
 int RtlTcpConnector::set_center_frequency(double frequency) {
     return send_command((struct command) {0x01, htonl(frequency)});
@@ -138,3 +181,10 @@ int RtlTcpConnector::set_ppm(int ppm) {
     return send_command((struct command) {0x05, htonl(ppm)});
 }
 
+int RtlTcpConnector::set_direct_sampling(int direct_sampling) {
+    return send_command((struct command) {0x09, htonl(direct_sampling)});
+}
+
+int RtlTcpConnector::set_bias_tee(bool bias_tee) {
+    return send_command((struct command) {0x0e, htonl((unsigned int) bias_tee)});
+}
