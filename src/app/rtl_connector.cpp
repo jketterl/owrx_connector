@@ -220,14 +220,17 @@ int RtlConnector::set_sample_rate(double sample_rate) {
 
 int RtlConnector::set_gain(GainSpec* gain) {
     int r;
-    SimpleGainSpec* simple_gain;
     if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
         r = rtlsdr_set_tuner_gain_mode(dev, 0);
         if (r < 0) {
             std::cerr << "setting gain mode failed\n";
             return 1;
         }
-    } else if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
+        return 0;
+    }
+
+    SimpleGainSpec* simple_gain;
+    if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
         r = rtlsdr_set_tuner_gain_mode(dev, 1);
         if (r < 0) {
             std::cerr << "setting gain mode failed\n";
@@ -239,10 +242,11 @@ int RtlConnector::set_gain(GainSpec* gain) {
             std::cerr << "setting gain failed\n";
             return 3;
         }
-    } else {
-        std::cerr << "unsupported gain settings\n";
-        return 100;
+        return 0;
     }
+
+    std::cerr << "unsupported gain settings\n";
+    return 100;
 
     return 0;
 }
