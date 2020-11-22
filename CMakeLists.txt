@@ -7,6 +7,9 @@ endif()
 project (owrx-connector VERSION 0.4.0)
 add_compile_definitions(VERSION="${CMAKE_PROJECT_VERSION}")
 
+enable_language(CXX)
+set(CMAKE_CXX_STANDARD 11)
+
 # these are conflicting settings in older SoapySDR cmake files.
 # enable for testing purposes.
 #add_compile_options(-fvisibility=hidden)
