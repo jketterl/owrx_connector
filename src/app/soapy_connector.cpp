@@ -252,8 +252,7 @@ int SoapyConnector::set_ppm(int ppm) {
 #if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
         dev->setFrequencyCorrection(SOAPY_SDR_RX, channel, ppm);
 #else
-        SoapySDRKwargs args = {0};
-        dev->setFrequencyComponent(SOAPY_SDR_RX, channel, "CORR", ppm);
+        dev->setFrequency(SOAPY_SDR_RX, channel, "CORR", ppm);
 #endif
         return 0;
     } catch (const std::exception& e) {
