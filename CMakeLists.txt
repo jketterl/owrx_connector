@@ -5,7 +5,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 project (owrx-connector VERSION 0.4.0)
-add_definitions(-DVERSION="${CMAKE_PROJECT_VERSION}-dev")
+add_definitions(-DVERSION="${PROJECT_VERSION}-dev")
 
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 11)
