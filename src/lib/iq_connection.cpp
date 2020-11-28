@@ -43,9 +43,14 @@ void IQSocket<T>::accept_loop() {
         int client_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
 
         if (client_sock >= 0) {
-            new IQConnection<T>(client_sock, ringbuffer);
+            startNewConnection(client_sock);
         }
     }
+}
+
+template <typename T>
+void IQSocket<T>::startNewConnection(int client_sock) {
+    new IQConnection<T>(client_sock, ringbuffer);
 }
 
 template class IQSocket<float>;
@@ -55,8 +60,16 @@ template <typename T>
 IQConnection<T>::IQConnection(int client_sock, Ringbuffer<T>* new_ringbuffer) {
     sock = client_sock;
     ringbuffer = new_ringbuffer;
-    thread = std::thread( [this] { loop(); });
+    thread = std::thread( [this] {
+        sendHeaders();
+        loop();
+    });
     thread.detach();
+}
+
+template <typename T>
+void IQConnection<T>::sendHeaders() {
+    // NOOP
 }
 
 template <typename T>

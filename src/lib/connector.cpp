@@ -2,6 +2,7 @@
 #include "owrx/gainspec.hpp"
 #include "ringbuffer.hpp"
 #include "iq_connection.hpp"
+#include "rtl_tcp_connection.hpp"
 #include "control_connection.hpp"
 #include "fmv.h"
 #include <stdlib.h>
@@ -59,7 +60,7 @@ int Connector::main(int argc, char** argv) {
     iq_socket->start();
 
     if (rtltcp_port > 0) {
-        IQSocket<uint8_t>* rtltcp_socket = new IQSocket<uint8_t>(rtltcp_port, uint8_buffer);
+        RtlTcpSocket* rtltcp_socket = new RtlTcpSocket(rtltcp_port, uint8_buffer);
         rtltcp_socket->start();
     }
 

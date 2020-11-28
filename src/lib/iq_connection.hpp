@@ -14,11 +14,13 @@ namespace Owrx {
         public:
             IQSocket<T>(uint16_t port, Ringbuffer<T>* ringbuffer);
             void start();
+        protected:
+            Ringbuffer<T>* ringbuffer;
+            virtual void startNewConnection(int client_sock);
         private:
             int sock;
             std::thread thread;
             bool run = true;
-            Ringbuffer<T>* ringbuffer;
 
             void accept_loop();
     };
@@ -27,6 +29,8 @@ namespace Owrx {
     class IQConnection {
         public:
             IQConnection(int client_sock, Ringbuffer<T>* ringbuffer);
+        protected:
+            virtual void sendHeaders();
         private:
             int sock;
             std::thread thread;

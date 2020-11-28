@@ -1,4 +1,4 @@
-add_library(owrx-connector SHARED connector.cpp ringbuffer.cpp iq_connection.cpp control_connection.cpp gainspec.cpp)
+add_library(owrx-connector SHARED connector.cpp ringbuffer.cpp iq_connection.cpp rtl_tcp_connection.cpp control_connection.cpp gainspec.cpp)
 target_link_libraries(owrx-connector ${LIBS})
 set_target_properties(owrx-connector PROPERTIES VERSION ${PROJECT_VERSION})
 file(GLOB OWRX_CONNECTOR_HEADERS "${PROJECT_SOURCE_DIR}/include/owrx/*.hpp")
