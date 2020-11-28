@@ -264,6 +264,22 @@ int Connector::set_rtltcp_port(int new_rtltcp_port) {
     return 0;
 }
 
+double Connector::get_center_frequency() {
+    return center_frequency;
+}
+
+double Connector::get_sample_rate() {
+    return sample_rate;
+}
+
+GainSpec* Connector::get_gain() {
+    return gain;
+}
+
+int Connector::get_ppm() {
+    return ppm;
+}
+
 void Connector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "center_freq") {

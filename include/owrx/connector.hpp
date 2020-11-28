@@ -40,6 +40,11 @@ namespace Owrx {
             virtual int setup();
             virtual int stop();
 
+            virtual double get_center_frequency();
+            virtual double get_sample_rate();
+            virtual GainSpec* get_gain();
+            virtual int get_ppm();
+
             // methods that must be overridden for the individual hardware
             virtual uint32_t get_buffer_size() = 0;
             virtual int open() = 0;
