@@ -31,8 +31,8 @@ namespace Owrx {
             IQConnection(int client_sock, Ringbuffer<T>* ringbuffer);
         protected:
             virtual void sendHeaders();
-        private:
             int sock;
+        private:
             std::thread thread;
             bool run = true;
             Ringbuffer<T>* ringbuffer;
