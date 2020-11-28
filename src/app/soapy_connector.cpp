@@ -88,7 +88,7 @@ int SoapyConnector::setAntenna(std::string antenna) {
 }
 
 int SoapyConnector::setSettings(std::string settings) {
-    SoapySDR::Kwargs args = SoapySDR::KwargsFromString(settings);
+    SoapySDR::Kwargs args = Connector::parseSettings(settings);
     for (const auto &p : args) {
         std::string key = p.first;
         std::string value = p.second;

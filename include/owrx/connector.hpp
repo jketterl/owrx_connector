@@ -5,6 +5,7 @@
 #include <sstream>
 #include <getopt.h>
 #include <vector>
+#include <map>
 
 namespace Owrx {
 
@@ -19,6 +20,8 @@ namespace Owrx {
             void handle_signal(int signal);
 
             virtual void applyChange(std::string key, std::string value);
+
+            static std::map<std::string, std::string> parseSettings(std::string input);
         protected:
             char* device_id = nullptr;
             bool iqswap = false;
