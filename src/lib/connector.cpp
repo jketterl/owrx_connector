@@ -347,6 +347,7 @@ void Connector::processSamples(T* input, uint32_t len) {
 
 template void Connector::processSamples<float>(float*, uint32_t);
 template void Connector::processSamples<int16_t>(int16_t*, uint32_t);
+template void Connector::processSamples<int32_t>(int32_t*, uint32_t);
 template void Connector::processSamples<uint8_t>(uint8_t*, uint32_t);
 
 OWRX_CONNECTOR_TARGET_CLONES
@@ -361,7 +362,15 @@ OWRX_CONNECTOR_TARGET_CLONES
 void Connector::convert(int16_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
     uint32_t i;
     for (i = 0; i < len; i++) {
-        output[i] = (float)input[i] / SHRT_MAX;
+        output[i] = (float)input[i] / INT16_MAX;
+    }
+}
+
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(int32_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+        output[i] = (float)input[i] / INT32_MAX;
     }
 }
 
@@ -378,6 +387,14 @@ void Connector::convert(int16_t* __restrict__ input, uint8_t* __restrict__ outpu
     uint32_t i;
     for (i = 0; i < len; i++) {
         output[i] = input[i] / 32767.0f * 128.0f + 127.4f;
+    }
+}
+
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(int32_t* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+        output[i] = input[i] / (float) INT32_MAX * 128.0f + 127.4f;
     }
 }
 

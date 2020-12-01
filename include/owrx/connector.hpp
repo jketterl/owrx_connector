@@ -78,10 +78,12 @@ namespace Owrx {
 
             void convert(uint8_t* input, float* output, uint32_t len);
             void convert(int16_t* input, float* output, uint32_t len);
+            void convert(int32_t* input, float* output, uint32_t len);
             void convert(float* input, float* output, uint32_t len);
 
             void convert(uint8_t* input, uint8_t* output, uint32_t len);
             void convert(int16_t* input, uint8_t* output, uint32_t len);
+            void convert(int32_t* input, uint8_t* output, uint32_t len);
             void convert(float* input, uint8_t* output, uint32_t len);
     };
 }
