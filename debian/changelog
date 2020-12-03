@@ -1,5 +1,5 @@
 owrx-connector (0.4.0) UNRELEASED; urgency=low
-  * First release usint debian build system; first changelog entry.
+  * First release using debian build system; first changelog entry.
   * New connector library introduced that contains common functionality for
     all connectors
   * All connectors have been rewritten in C++ to use the new library
