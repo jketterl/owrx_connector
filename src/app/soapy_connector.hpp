@@ -22,7 +22,7 @@ class SoapyConnector: public Connector {
         virtual int set_center_frequency(double frequency) override;
         virtual int set_sample_rate(double sample_rate) override;
         virtual int set_gain(GainSpec* gain) override;
-        virtual int set_ppm(int ppm) override;
+        virtual int set_ppm(double ppm) override;
     private:
         uint32_t soapy_buffer_size = SOAPY_BUFFER_SIZE;
         SoapySDR::Device* dev = nullptr;

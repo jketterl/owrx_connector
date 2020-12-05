@@ -167,7 +167,7 @@ int Connector::receive_option(int c, char* optarg) {
             control_port = atoi(optarg);
             break;
         case 'P':
-            ppm = atoi(optarg);
+            ppm = strtod(optarg, NULL);
             break;
         case 'i':
             iqswap = true;
@@ -277,7 +277,7 @@ GainSpec* Connector::get_gain() {
     return gain;
 }
 
-int Connector::get_ppm() {
+double Connector::get_ppm() {
     return ppm;
 }
 

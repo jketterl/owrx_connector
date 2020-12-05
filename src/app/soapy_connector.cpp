@@ -247,7 +247,7 @@ int SoapyConnector::set_gain(GainSpec* gain) {
     return 0;
 };
 
-int SoapyConnector::set_ppm(int ppm) {
+int SoapyConnector::set_ppm(double ppm) {
     try {
 #if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
         dev->setFrequencyCorrection(SOAPY_SDR_RX, channel, ppm);

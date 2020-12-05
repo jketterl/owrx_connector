@@ -46,7 +46,7 @@ namespace Owrx {
             virtual double get_center_frequency();
             virtual double get_sample_rate();
             virtual GainSpec* get_gain();
-            virtual int get_ppm();
+            virtual double get_ppm();
 
             // methods that must be overridden for the individual hardware
             virtual uint32_t get_buffer_size() = 0;
@@ -56,14 +56,14 @@ namespace Owrx {
             virtual int set_center_frequency(double frequency) = 0;
             virtual int set_sample_rate(double sample_rate) = 0;
             virtual int set_gain(GainSpec* gain) = 0;
-            virtual int set_ppm(int ppm) = 0;
+            virtual int set_ppm(double ppm) = 0;
         private:
             char* program_name;
             uint16_t port = 4950;
             int32_t control_port = -1;
             double center_frequency;
             double sample_rate;
-            int32_t ppm;
+            double ppm;
             GainSpec* gain;
             Ringbuffer<float>* float_buffer;
             Ringbuffer<uint8_t>* uint8_buffer;

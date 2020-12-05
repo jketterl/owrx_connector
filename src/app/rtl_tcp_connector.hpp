@@ -27,7 +27,7 @@ class RtlTcpConnector: public Connector {
         virtual int set_center_frequency(double frequency) override;
         virtual int set_sample_rate(double sample_rate) override;
         virtual int set_gain(GainSpec* gain) override;
-        virtual int set_ppm(int ppm) override;
+        virtual int set_ppm(double ppm) override;
         int set_direct_sampling(int direct_sampling);
         int set_bias_tee(bool bias_tee);
     private:

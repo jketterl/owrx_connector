@@ -178,7 +178,7 @@ int RtlTcpConnector::set_gain(GainSpec* gain) {
     return 100;
 }
 
-int RtlTcpConnector::set_ppm(int ppm) {
+int RtlTcpConnector::set_ppm(double ppm) {
     return send_command((struct command) {0x05, htonl(ppm)});
 }
 

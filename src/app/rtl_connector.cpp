@@ -251,7 +251,7 @@ int RtlConnector::set_gain(GainSpec* gain) {
     return 0;
 }
 
-int RtlConnector::set_ppm(int32_t ppm) {
+int RtlConnector::set_ppm(double ppm) {
     if (ppm == 0) {
         return 0;
     }
