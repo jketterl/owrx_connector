@@ -293,7 +293,7 @@ void Connector::applyChange(std::string key, std::string value) {
         gain = GainSpec::parse(&value);
         r = set_gain(gain);
     } else if (key == "ppm") {
-        ppm = stoi(value);
+        ppm = stod(value);
         r = set_ppm(ppm);
     } else if (key == "iqswap") {
         iqswap = convertBooleanValue(value);
