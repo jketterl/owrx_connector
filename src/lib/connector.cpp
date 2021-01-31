@@ -284,16 +284,16 @@ double Connector::get_ppm() {
 void Connector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "center_freq") {
-        center_frequency = std::stoul(value);
+        center_frequency = std::stod(value);
         r = set_center_frequency(center_frequency);
     } else if (key == "samp_rate") {
-        sample_rate = std::stoul(value);
+        sample_rate = std::stod(value);
         r = set_sample_rate(sample_rate);
     } else if (key == "rf_gain") {
         gain = GainSpec::parse(&value);
         r = set_gain(gain);
     } else if (key == "ppm") {
-        ppm = stod(value);
+        ppm = std::stod(value);
         r = set_ppm(ppm);
     } else if (key == "iqswap") {
         iqswap = convertBooleanValue(value);

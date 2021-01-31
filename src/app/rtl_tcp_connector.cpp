@@ -61,7 +61,7 @@ int RtlTcpConnector::parse_arguments(int argc, char** argv) {
             host = argument;
         } else {
             host = argument.substr(0, colon_pos);
-            port = stoi(argument.substr(colon_pos + 1));
+            port = std::stoi(argument.substr(colon_pos + 1));
         }
     }
 

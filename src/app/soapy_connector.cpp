@@ -233,7 +233,7 @@ int SoapyConnector::set_gain(GainSpec* gain) {
         try {
             dev->setGainMode(SOAPY_SDR_RX, channel, false);
             for (const auto &p : gains) {
-                dev->setGain(SOAPY_SDR_RX, channel, p.first, stol(p.second));
+                dev->setGain(SOAPY_SDR_RX, channel, p.first, std::stod(p.second));
             }
         } catch (const std::exception& e) {
             std::cerr << e.what() << "\n";
