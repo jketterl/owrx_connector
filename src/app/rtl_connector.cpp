@@ -36,7 +36,7 @@ int RtlConnector::receive_option(int c, char* optarg) {
             break;
 #endif
         case 'e':
-            direct_sampling = atoi(optarg);
+            direct_sampling = std::strtoul(optarg, NULL, 10);
             break;
         default:
             return Connector::receive_option(c, optarg);

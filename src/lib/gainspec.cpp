@@ -12,7 +12,7 @@ GainSpec* GainSpec::parse(std::string* input) {
         return new AutoGainSpec();
     }
     try {
-        return new SimpleGainSpec(stof(*input));
+        return new SimpleGainSpec(std::stof(*input));
     } catch (std::invalid_argument e) {
         return new MultiGainSpec(*input);
     }

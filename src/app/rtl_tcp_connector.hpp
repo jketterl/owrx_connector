@@ -14,6 +14,8 @@ struct command {
 }__attribute((packed));
 
 class RtlTcpConnector: public Connector {
+    public:
+        void applyChange(std::string key, std::string value) override;
     protected:
         std::stringstream get_usage_string() override;
         std::vector<struct option> getopt_long_options() override;

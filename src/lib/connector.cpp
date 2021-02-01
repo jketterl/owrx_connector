@@ -152,28 +152,28 @@ int Connector::receive_option(int c, char* optarg) {
             device_id = optarg;
             break;
         case 'p':
-            port = atoi(optarg);
+            port = std::strtoul(optarg, NULL, 10);
             break;
         case 'f':
-            center_frequency = strtod(optarg, NULL);
+            center_frequency = std::strtod(optarg, NULL);
             break;
         case 's':
-            sample_rate = strtod(optarg, NULL);
+            sample_rate = std::strtod(optarg, NULL);
             break;
         case 'g':
             gain = GainSpec::parse(new std::string(optarg));
             break;
         case 'c':
-            control_port = atoi(optarg);
+            control_port = std::strtoul(optarg, NULL, 10);
             break;
         case 'P':
-            ppm = strtod(optarg, NULL);
+            ppm = std::strtod(optarg, NULL);
             break;
         case 'i':
             iqswap = true;
             break;
         case 'r':
-            rtltcp_port = atoi(optarg);
+            rtltcp_port = std::strtoul(optarg, NULL, 10);
             break;
     }
     return 0;

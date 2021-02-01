@@ -39,7 +39,7 @@ int RtlTcpConnector::receive_option(int c, char* optarg) {
             bias_tee = true;
             break;
         case 'e':
-            direct_sampling = atoi(optarg);
+            direct_sampling = std::strtoul(optarg, NULL, 10);
             break;
         default:
             return Connector::receive_option(c, optarg);
@@ -142,6 +142,23 @@ int RtlTcpConnector::read() {
 
 int RtlTcpConnector::close() {
     return ::close(sock);
+}
+
+void RtlTcpConnector::applyChange(std::string key, std::string value) {
+    int r = 0;
+    if (key == "direct_sampling") {
+        direct_sampling = convertBooleanValue(value);
+        r = set_direct_sampling(direct_sampling);
+    } else if (key == "bias_tee") {
+        bias_tee = std::stoi(value);
+        r = set_bias_tee(bias_tee);
+    } else {
+        Connector::applyChange(key, value);
+        return;
+    }
+    if (r != 0) {
+        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << "\n";
+    }
 }
 
 int RtlTcpConnector::set_center_frequency(double frequency) {
