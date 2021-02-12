@@ -22,21 +22,21 @@ Description: OpenWebRX connector base library - development files
 Package: rtl-connector
 Architecture: any
 Depends: libowrx-connector (=${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Conflicts: owrx-connector (< 0.4)
+Conflicts: owrx-connector (<< 0.4)
 Description: OpenWebRX connector for RTL-SDR devices
  Provides connector functionality for RTL-SDR based devices
 
 Package: soapy-connector
 Architecture: any
 Depends: libowrx-connector (=${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Conflicts: owrx-connector (< 0.4)
+Conflicts: owrx-connector (<< 0.4)
 Description: OpenWebRX connector for SoapySDR devices
  Provides connector functionality for devices supported by the SoapySDR library
 
 Package: rtl-tcp-connector
 Architecture: any
 Depends: libowrx-connector (=${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Conflicts: owrx-connector (< 0.4)
+Conflicts: owrx-connector (<< 0.4)
 Description: OpenWebRX connector for rtl_tcp remote devices
  Provides connector functionality for (potentially) remote SDR devices that are
  available on the network using the rtl_tcp protocol.
