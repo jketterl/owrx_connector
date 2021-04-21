@@ -159,6 +159,14 @@ int RtlConnector::verbose_device_search(char const *s) {
                 return device;
             }
         }
+    /* does string begin with "index=" and match an available index */
+    } else if (strncmp(s, "index=", 6) == 0) {
+        device = (int)strtol((char *) s + 6, &s2, 0);
+        if (s2[0] == '\0' && device >= 0 && device < device_count) {
+            std::cerr << "Using device " << device << ": " <<
+                rtlsdr_get_device_name((uint32_t)device) << "\n";
+            return device;
+        }
     } else {
         /* does string exact match a serial */
         for (i = 0; i < device_count; i++) {
