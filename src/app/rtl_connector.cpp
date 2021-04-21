@@ -128,67 +128,58 @@ int RtlConnector::close() {
 }
 
 int RtlConnector::verbose_device_search(char const *s) {
-	int i, device_count, device, offset;
-	char *s2;
-	char vendor[256], product[256], serial[256];
-	device_count = rtlsdr_get_device_count();
-	if (!device_count) {
-		std::cerr << "No supported devices found.\n";
-		return -1;
-	}
-	std::cerr << "Found " << device_count << " device(s):\n";
-	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		std::cerr << "  " << i << ":  " << vendor << ", " << product << ", SN: " << serial << "\n";
-	}
-	std::cerr << "\n";
-	/* if no device has been selected by the user, use the first one */
-	if (s == nullptr) {
-	    if (device_count > 0) return 0;
-	    return -1;
-	}
-    /* does string look like raw id number */
-    device = (int)strtol(s, &s2, 0);
-	if (s2[0] == '\0' && device >= 0 && device < device_count) {
-		std::cerr << "Using device " << device << ": " <<
-		    rtlsdr_get_device_name((uint32_t)device) << "\n";
-		return device;
-	}
-	/* does string exact match a serial */
-	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (strcmp(s, serial) != 0) {
-			continue;}
-		device = i;
-		std::cerr << "Using device " << device << ": " <<
-		    rtlsdr_get_device_name((uint32_t)device) << "\n";
-		return device;
-	}
-	/* does string prefix match a serial */
-	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (strncmp(s, serial, strlen(s)) != 0) {
-			continue;}
-		device = i;
-		std::cerr << "Using device " << device << ": " <<
-		    rtlsdr_get_device_name((uint32_t)device) << "\n";
-		return device;
-	}
-	/* does string suffix match a serial */
-	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		offset = strlen(serial) - strlen(s);
-		if (offset < 0) {
-			continue;}
-		if (strncmp(s, serial+offset, strlen(s)) != 0) {
-			continue;}
-		device = i;
-		std::cerr << "Using device " << device << ": " <<
-		    rtlsdr_get_device_name((uint32_t)device) << "\n";
-		return device;
-	}
-	std::cerr << "No matching devices found.\n";
-	return -1;
+    int i, device_count, device, offset;
+    char *s2;
+    char vendor[256], product[256], serial[256];
+    device_count = rtlsdr_get_device_count();
+    if (!device_count) {
+        std::cerr << "No supported devices found.\n";
+        return -1;
+    }
+    std::cerr << "Found " << device_count << " device(s):\n";
+    for (i = 0; i < device_count; i++) {
+        rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+        std::cerr << "  " << i << ":  " << vendor << ", " << product << ", SN: " << serial << "\n";
+    }
+    std::cerr << "\n";
+    /* if no device has been selected by the user, use the first one */
+    if (s == nullptr) {
+        if (device_count > 0) return 0;
+        return -1;
+    }
+    /* does string begin with "serial=" and exact match a serial */
+    if (strncmp(s, "serial=", 7) == 0) {
+        s2 = (char*) s + 7;
+        for (i = 0; i < device_count; i++) {
+            rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+            if (strcmp(s2, serial) == 0) {
+                device = i;
+                std::cerr << "Using device " << device << ": " <<
+                    rtlsdr_get_device_name((uint32_t)device) << "\n";
+                return device;
+            }
+        }
+    } else {
+        /* does string exact match a serial */
+        for (i = 0; i < device_count; i++) {
+            rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+            if (strcmp(s, serial) == 0) {
+                device = i;
+                std::cerr << "Using device " << device << ": " <<
+                    rtlsdr_get_device_name((uint32_t)device) << "\n";
+                return device;
+            }
+        }
+        /* does string look like raw id number */
+        device = (int)strtol(s, &s2, 0);
+        if (s2[0] == '\0' && device >= 0 && device < device_count) {
+            std::cerr << "Using device " << device << ": " <<
+                rtlsdr_get_device_name((uint32_t)device) << "\n";
+            return device;
+        }
+    }
+    std::cerr << "No matching devices found.\n";
+    return -1;
 }
 
 void RtlConnector::applyChange(std::string key, std::string value) {
