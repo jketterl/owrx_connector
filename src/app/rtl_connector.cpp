@@ -193,7 +193,11 @@ int RtlConnector::verbose_device_search(char const *s) {
 void RtlConnector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "direct_sampling") {
-        direct_sampling = std::stoul(value, NULL, 10);
+        if (value == "None") {
+            direct_sampling = 0;
+        } else {
+            direct_sampling = std::stoul(value, NULL, 10);
+        }
         r = set_direct_sampling(direct_sampling);
 #if HAS_RTLSDR_SET_BIAS_TEE
     } else if (key == "bias_tee") {
@@ -259,7 +263,27 @@ int RtlConnector::set_ppm(double ppm) {
 };
 
 int RtlConnector::set_direct_sampling(int new_direct_sampling) {
-    return rtlsdr_set_direct_sampling(dev, new_direct_sampling);
+    int r;
+    r = rtlsdr_set_direct_sampling(dev, new_direct_sampling);
+    if (r != 0) {
+        std::cerr << "rtlsdr_set_direct_sampling() failed with rc = " << r << "\n";
+        return r;
+    }
+    // switching direct sampling mode requires setting the frequency again
+    r = set_center_frequency(get_center_frequency());
+    if (r != 0) {
+        std::cerr << "set_center_frequency() failed with rc = " << r << "\n";
+        return r;
+    }
+    if (direct_sampling == 0) {
+        // gain is off when switching out of direct sampling, so reset it
+        r = set_gain(get_gain());
+        if (r != 0) {
+            std::cerr << "set_gain() failed with rc = " << r << "\n";
+            return r;
+        }
+    }
+    return 0;
 }
 
 #if HAS_RTLSDR_SET_BIAS_TEE
