@@ -193,7 +193,7 @@ int RtlConnector::verbose_device_search(char const *s) {
 void RtlConnector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "direct_sampling") {
-        direct_sampling = convertBooleanValue(value);
+        direct_sampling = std::stoul(value, NULL, 10);
         r = set_direct_sampling(direct_sampling);
 #if HAS_RTLSDR_SET_BIAS_TEE
     } else if (key == "bias_tee") {
