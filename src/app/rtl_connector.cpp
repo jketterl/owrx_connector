@@ -255,11 +255,14 @@ int RtlConnector::set_gain(GainSpec* gain) {
 }
 
 int RtlConnector::set_ppm(double ppm) {
-    if (ppm == 0) {
+    int r = rtlsdr_set_freq_correction(dev, ppm);
+
+    // -2 indicates that the value hasn't changed
+    if (r == -2) {
         return 0;
     }
 
-    return rtlsdr_set_freq_correction(dev, ppm);
+    return r;
 };
 
 int RtlConnector::set_direct_sampling(int new_direct_sampling) {
