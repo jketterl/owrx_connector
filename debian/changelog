@@ -3,5 +3,6 @@ owrx-connector (0.4.0) UNRELEASED; urgency=low
   * New connector library introduced that contains common functionality for
     all connectors
   * All connectors have been rewritten in C++ to use the new library
+  * Improved handling for direct sampling mode
 
  -- Jakob Ketterl <jakob.ketterl@gmx.de>  Tue, 01 Dec 2020 15:01:00 +0000
