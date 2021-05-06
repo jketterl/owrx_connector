@@ -1,4 +1,4 @@
-owrx-connector (0.4.0) UNRELEASED; urgency=low
+owrx-connector (0.4.0) buster hirsute; urgency=low
   * First release using debian build system; first changelog entry.
   * New connector library introduced that contains common functionality for
     all connectors
