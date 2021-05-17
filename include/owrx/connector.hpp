@@ -38,6 +38,7 @@ namespace Owrx {
             virtual std::stringstream get_usage_string();
             virtual std::vector<struct option> getopt_long_options();
             virtual int receive_option(int c, char* optarg);
+            virtual void print_version();
             virtual int set_iqswap(bool iqswap);
             virtual int set_rtltcp_port(int rtltcp_port);
             virtual int setup();
@@ -71,7 +72,6 @@ namespace Owrx {
 
             void init_buffers();
             void print_usage();
-            void print_version();
 
             template <typename T>
             void swapIQ(T* input, T* output, uint32_t len);

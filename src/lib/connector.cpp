@@ -205,7 +205,7 @@ void Connector::print_usage() {
 }
 
 void Connector::print_version() {
-    std::cout << "owrx-connector version " << VERSION << "\n";
+    std::cout << "libowrx-connector version " << VERSION << "\n";
 }
 
 int Connector::setup() {
