@@ -17,6 +17,7 @@ class RtlConnector: public Connector {
         std::stringstream get_usage_string() override;
         std::vector<struct option> getopt_long_options() override;
         int receive_option(int c, char* optarg) override;
+        virtual void print_version() override;
         uint32_t get_buffer_size() override;
         virtual int open() override;
         virtual int setup() override;

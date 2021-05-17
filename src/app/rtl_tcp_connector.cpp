@@ -68,6 +68,11 @@ int RtlTcpConnector::parse_arguments(int argc, char** argv) {
     return 0;
 }
 
+void RtlTcpConnector::print_version() {
+    std::cout << "rtl_tcp_connector version " << VERSION << "\n";
+    Connector::print_version();
+}
+
 int RtlTcpConnector::open() {
     struct hostent* hp = gethostbyname(host.c_str());
     if (hp == NULL) {

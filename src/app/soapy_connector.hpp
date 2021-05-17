@@ -14,6 +14,7 @@ class SoapyConnector: public Connector {
     public:
         virtual void applyChange(std::string key, std::string value) override;
     protected:
+        virtual void print_version() override;
         virtual uint32_t get_buffer_size() override;
         virtual int open() override;
         virtual int setup() override;

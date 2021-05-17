@@ -43,6 +43,11 @@ int SoapyConnector::receive_option(int c, char* optarg) {
     return 0;
 }
 
+void SoapyConnector::print_version() {
+    std::cout << "soapy_connector version " << VERSION << "\n";
+    Connector::print_version();
+}
+
 int SoapyConnector::open() {
     try {
         dev = SoapySDR::Device::make(device_id == nullptr ? "" : std::string(device_id));

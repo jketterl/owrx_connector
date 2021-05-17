@@ -44,6 +44,10 @@ int RtlConnector::receive_option(int c, char* optarg) {
     return 0;
 }
 
+void RtlConnector::print_version() {
+    std::cout << "rtl_connector version " << VERSION << "\n";
+    Connector::print_version();
+}
 
 int RtlConnector::open() {
     int dev_index = verbose_device_search(device_id);
