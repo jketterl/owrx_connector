@@ -20,6 +20,10 @@ using namespace Owrx;
 
 Connector::Connector() {
     gain = new AutoGainSpec();
+    //initialize lookup table
+    for (uint8_t i = 0 ; i < UINT_MAX ; i++){
+        uint8Float[i] = ((float) i) / (UINT8_MAX / 2.0f) - 1.0f;
+    }
 }
 
 void Connector::init_buffers() {
@@ -358,7 +362,7 @@ OWRX_CONNECTOR_TARGET_CLONES
 void Connector::convert(uint8_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
     uint32_t i;
     for (i = 0; i < len; i++) {
-        output[i] = ((float) (input[i])) / (UINT8_MAX / 2.0f) - 1.0f;
+        output[i] = uint8Float[input[i]];
     }
 }
 
