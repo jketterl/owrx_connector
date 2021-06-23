@@ -25,6 +25,18 @@ include(GNUInstallDirs)
 
 find_package(Threads REQUIRED)
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES ^arm.*)
+    execute_process(COMMAND "cat" "/proc/cpuinfo" OUTPUT_VARIABLE CPUINFO)
+    string(FIND ${CPUINFO} "neon" NEON_POSITION)
+    if(NEON_POSITION GREATER_EQUAL 0)
+        set(HAS_NEON true)
+    endif()
+    if (HAS_NEON)
+        SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -mfpu=neon -mvectorize-with-neon-quad")
+        SET(CMAKE_C_FLAGS "-mfpu=neon -mvectorize-with-neon-quad")
+    endif()
+endif()
+
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
 SET(CMAKE_C_FLAGS_DEBUG "-g -O3 -fopt-info-vec")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
