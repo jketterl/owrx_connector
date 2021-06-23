@@ -33,7 +33,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES ^arm.*)
     endif()
     if (HAS_NEON)
         SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -mfpu=neon -mvectorize-with-neon-quad")
-        SET(CMAKE_C_FLAGS "-mfpu=neon -mvectorize-with-neon-quad")
+        SET(CMAKE_C_FLAGS "-mfloat-abi=hard -mfpu=neon -mvectorize-with-neon-quad")
     endif()
 endif()
 
