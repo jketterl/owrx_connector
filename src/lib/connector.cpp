@@ -21,7 +21,7 @@ using namespace Owrx;
 Connector::Connector() {
     gain = new AutoGainSpec();
     //initialize lookup table
-    for (uint8_t i = 0 ; i < UINT_MAX ; i++){
+    for (uint8_t i = 0 ; i < UINT8_MAX ; i++){
         uint8Float[i] = ((float) i) / (UINT8_MAX / 2.0f) - 1.0f;
     }
 }
