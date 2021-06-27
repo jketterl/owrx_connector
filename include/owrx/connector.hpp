@@ -65,7 +65,7 @@ namespace Owrx {
             double center_frequency;
             double sample_rate;
             double ppm;
-            uint8_t uint8Float[UINT8_MAX];
+            float uint8Float[UINT8_MAX];
             GainSpec* gain;
             Ringbuffer<float>* float_buffer;
             Ringbuffer<uint8_t>* uint8_buffer;
