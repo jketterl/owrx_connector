@@ -107,9 +107,9 @@ int SoapyConnector::read() {
     // use native CF32 if available
     if (std::find(formats.begin(), formats.end(), SOAPY_SDR_CF32) != formats.end()) {
         format = SOAPY_SDR_CF32;
-    	std::cerr << "SPEED: using native CF32 format";
+    	std:cerr << "SPEED: using native CF32 format";
     } else {
-    	std::cerr << "SPEEDWARN: not using native CF32 format";
+    	std:cerr << "SPEEDWARN: not using native CF32 format";
     }
 
     void* buf = malloc(soapy_buffer_size * SoapySDR::formatToSize(format));
