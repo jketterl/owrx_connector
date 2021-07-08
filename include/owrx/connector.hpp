@@ -22,6 +22,7 @@ namespace Owrx {
             virtual void applyChange(std::string key, std::string value);
 
             static std::map<std::string, std::string> parseSettings(std::string input);
+            void convert(uint8_t* input, float* output, uint32_t len);
         protected:
             char* device_id = nullptr;
             bool iqswap = false;
@@ -77,7 +78,6 @@ namespace Owrx {
             template <typename T>
             void swapIQ(T* input, T* output, uint32_t len);
 
-            void convert(uint8_t* input, float* output, uint32_t len);
             void convert(int16_t* input, float* output, uint32_t len);
             void convert(int32_t* input, float* output, uint32_t len);
             void convert(float* input, float* output, uint32_t len);

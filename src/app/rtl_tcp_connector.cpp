@@ -8,10 +8,12 @@
 #include <cstring>
 #include <unistd.h>
 
+/*
 int main (int argc, char** argv) {
     Connector* connector = new RtlTcpConnector();
     return connector->main(argc, argv);
 }
+*/
 
 uint32_t RtlTcpConnector::get_buffer_size() {
     return rtl_buffer_size;
