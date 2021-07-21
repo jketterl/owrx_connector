@@ -13,6 +13,7 @@ namespace Owrx {
     class IQSocket {
         public:
             IQSocket<T>(uint16_t port, Ringbuffer<T>* ringbuffer);
+            virtual ~IQSocket() = default;
             void start();
         protected:
             Ringbuffer<T>* ringbuffer;
@@ -29,6 +30,7 @@ namespace Owrx {
     class IQConnection {
         public:
             IQConnection(int client_sock, Ringbuffer<T>* ringbuffer);
+            virtual ~IQConnection() = default;
         protected:
             virtual void sendHeaders();
             int sock;

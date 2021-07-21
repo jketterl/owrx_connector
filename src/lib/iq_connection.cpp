@@ -63,6 +63,7 @@ IQConnection<T>::IQConnection(int client_sock, Ringbuffer<T>* new_ringbuffer) {
     thread = std::thread( [this] {
         sendHeaders();
         loop();
+        delete this;
     });
     thread.detach();
 }
