@@ -18,9 +18,9 @@
 
 using namespace Owrx;
 
-Connector::Connector() {
-    gain = new AutoGainSpec();
-}
+Connector::Connector():
+    gain(new AutoGainSpec())
+{}
 
 void Connector::init_buffers() {
     float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
@@ -160,9 +160,13 @@ int Connector::receive_option(int c, char* optarg) {
         case 's':
             sample_rate = std::strtod(optarg, NULL);
             break;
-        case 'g':
-            gain = GainSpec::parse(new std::string(optarg));
+        case 'g': {
+            delete gain;
+            auto gainStr = new std::string(optarg);
+            gain = GainSpec::parse(gainStr);
+            delete gainStr;
             break;
+        }
         case 'c':
             control_port = std::strtoul(optarg, NULL, 10);
             break;
