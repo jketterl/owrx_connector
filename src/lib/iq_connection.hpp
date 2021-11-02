@@ -5,18 +5,18 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <thread>
-#include "ringbuffer.hpp"
+#include <csdr/ringbuffer.hpp>
 
 namespace Owrx {
 
     template <typename T>
     class IQSocket {
         public:
-            IQSocket<T>(uint16_t port, Ringbuffer<T>* ringbuffer);
+            IQSocket<T>(uint16_t port, Csdr::Ringbuffer<T>* ringbuffer);
             virtual ~IQSocket() = default;
             void start();
         protected:
-            Ringbuffer<T>* ringbuffer;
+            Csdr::Ringbuffer<T>* ringbuffer;
             virtual void startNewConnection(int client_sock);
         private:
             int sock;
@@ -29,7 +29,7 @@ namespace Owrx {
     template <typename T>
     class IQConnection {
         public:
-            IQConnection(int client_sock, Ringbuffer<T>* ringbuffer);
+            IQConnection(int client_sock, Csdr::RingbufferReader<T>* ringbuffer);
             virtual ~IQConnection() = default;
         protected:
             virtual void sendHeaders();
@@ -37,7 +37,7 @@ namespace Owrx {
         private:
             std::thread thread;
             bool run = true;
-            Ringbuffer<T>* ringbuffer;
+            Csdr::RingbufferReader<T>* reader;
 
             void loop();
     };

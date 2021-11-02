@@ -11,7 +11,7 @@ typedef struct { /* structure size must be multiple of 2 bytes */
 } dongle_info_t;
 
 void RtlTcpSocket::startNewConnection(int client_sock) {
-    new RtlTcpConnection(client_sock, ringbuffer);
+    new RtlTcpConnection(client_sock, new Csdr::RingbufferReader<uint8_t>(ringbuffer));
 }
 
 void RtlTcpConnection::sendHeaders() {

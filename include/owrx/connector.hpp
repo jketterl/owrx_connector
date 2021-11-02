@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <vector>
 #include <map>
+#include <csdr/ringbuffer.hpp>
 
 namespace Owrx {
 
@@ -66,8 +67,8 @@ namespace Owrx {
             double sample_rate;
             double ppm;
             GainSpec* gain;
-            Ringbuffer<float>* float_buffer;
-            Ringbuffer<uint8_t>* uint8_buffer;
+            Csdr::Ringbuffer<float>* float_buffer;
+            Csdr::Ringbuffer<uint8_t>* uint8_buffer;
             void* conversion_buffer;
 
             void init_buffers();

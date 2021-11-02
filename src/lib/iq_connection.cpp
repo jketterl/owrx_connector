@@ -8,7 +8,7 @@
 using namespace Owrx;
 
 template <typename T>
-IQSocket<T>::IQSocket(uint16_t port, Ringbuffer<T>* new_ringbuffer) {
+IQSocket<T>::IQSocket(uint16_t port, Csdr::Ringbuffer<T>* new_ringbuffer) {
     ringbuffer = new_ringbuffer;
 
     struct sockaddr_in local;
@@ -50,16 +50,13 @@ void IQSocket<T>::accept_loop() {
 
 template <typename T>
 void IQSocket<T>::startNewConnection(int client_sock) {
-    new IQConnection<T>(client_sock, ringbuffer);
+    new IQConnection<T>(client_sock, new Csdr::RingbufferReader<T>(ringbuffer));
 }
 
-template class IQSocket<float>;
-template class IQSocket<uint8_t>;
-
 template <typename T>
-IQConnection<T>::IQConnection(int client_sock, Ringbuffer<T>* new_ringbuffer) {
+IQConnection<T>::IQConnection(int client_sock, Csdr::RingbufferReader<T>* reader) {
     sock = client_sock;
-    ringbuffer = new_ringbuffer;
+    this->reader = reader;
     thread = std::thread( [this] {
         sendHeaders();
         loop();
@@ -77,17 +74,14 @@ template <typename T>
 void IQConnection<T>::loop() {
     std::cerr << "client connection established\n";
 
-    uint32_t read_pos = ringbuffer->get_write_pos();
     ssize_t sent;
 
-    T* read_pointer;
     while (run) {
-        ringbuffer->wait();
+        reader->wait();
         int available;
-        while ((read_pointer = ringbuffer->get_read_pointer(read_pos)) != nullptr) {
-            available = ringbuffer->available_samples(read_pos);
-            sent = send(sock, read_pointer, available * sizeof(T), MSG_NOSIGNAL);
-            read_pos = (read_pos + available) % ringbuffer->get_length();
+        while ((available = reader->available()) > 0) {
+            sent = send(sock, reader->getReadPointer(), available * sizeof(T), MSG_NOSIGNAL);
+            reader->advance(available);
             if (sent <= 0) {
                 run = false;
             }
@@ -97,5 +91,11 @@ void IQConnection<T>::loop() {
     close(sock);
 }
 
-template class IQConnection<float>;
-template class IQConnection<uint8_t>;
+namespace Owrx {
+    template class IQSocket<float>;
+    template class IQSocket<uint8_t>;
+
+    template class IQConnection<float>;
+    template class IQConnection<uint8_t>;
+}
+

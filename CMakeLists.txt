@@ -25,6 +25,8 @@ include(GNUInstallDirs)
 
 find_package(Threads REQUIRED)
 
+find_package(Csdr 0.18 REQUIRED)
+
 if(CMAKE_SYSTEM_PROCESSOR MATCHES ^arm.*)
     execute_process(COMMAND "cat" "/proc/cpuinfo" OUTPUT_VARIABLE CPUINFO)
     string(FIND ${CPUINFO} "neon" NEON_POSITION)

@@ -1,6 +1,5 @@
 #include "owrx/connector.hpp"
 #include "owrx/gainspec.hpp"
-#include "ringbuffer.hpp"
 #include "iq_connection.hpp"
 #include "rtl_tcp_connection.hpp"
 #include "control_connection.hpp"
@@ -23,9 +22,9 @@ Connector::Connector():
 {}
 
 void Connector::init_buffers() {
-    float_buffer = new Ringbuffer<float>(10 * get_buffer_size());
+    float_buffer = new Csdr::Ringbuffer<float>(10 * get_buffer_size());
     if (rtltcp_port > 0) {
-        uint8_buffer = new Ringbuffer<uint8_t>(10 * get_buffer_size());
+        uint8_buffer = new Csdr::Ringbuffer<uint8_t>(10 * get_buffer_size());
     }
     // biggest samples that we cane process right now = float
     conversion_buffer = malloc(get_buffer_size() * sizeof(float));
@@ -337,16 +336,16 @@ void Connector::processSamples(T* input, uint32_t len) {
     uint32_t consumed = 0;
     uint32_t available;
     while (consumed < len) {
-        available = float_buffer->get_writeable_samples(len - consumed);
-        convert(source + consumed, float_buffer->get_write_pointer(), available);
+        available = std::min(float_buffer->writeable(), (size_t) len - consumed);
+        convert(source + consumed, float_buffer->getWritePointer(), available);
         float_buffer->advance(available);
         consumed += available;
     }
     if (rtltcp_port > 0) {
         consumed = 0;
         while (consumed < len) {
-            available = uint8_buffer->get_writeable_samples(len - consumed);
-            convert(source + consumed, uint8_buffer->get_write_pointer(), available);
+            available = std::min(uint8_buffer->writeable(), (size_t) len - consumed);
+            convert(source + consumed, uint8_buffer->getWritePointer(), available);
             uint8_buffer->advance(available);
             consumed += available;
         }
