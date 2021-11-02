@@ -293,6 +293,7 @@ void Connector::applyChange(std::string key, std::string value) {
         sample_rate = std::stod(value);
         r = set_sample_rate(sample_rate);
     } else if (key == "rf_gain") {
+        delete gain;
         gain = GainSpec::parse(&value);
         r = set_gain(gain);
     } else if (key == "ppm") {
