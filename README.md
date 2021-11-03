@@ -22,7 +22,7 @@ that applications using rtl_tcp compatibiltiy will not be able to control the SD
 
 - If you want to work with rtlsdr devices, you will need to install the corresponding header files (on Debian:
   `apt-get install librtlsdr-dev`)
-- If you want to work with devices supported by SoapySDR, you will need to install the corresponnding header files
+- If you want to work with devices supported by SoapySDR, you will need to install the corresponding header files
   (on Debian: `apt-get install libsoapysdr-dev`)
 
 If you have compiled rtlsdr / soapy from source, you should not need to worry about this. The installation should place
