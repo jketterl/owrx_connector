@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <csdr/ringbuffer.hpp>
+#include <csdr/complex.hpp>
 
 namespace Owrx {
 
@@ -66,8 +67,8 @@ namespace Owrx {
             double sample_rate;
             double ppm;
             GainSpec* gain;
-            Csdr::Ringbuffer<float>* float_buffer;
-            Csdr::Ringbuffer<uint8_t>* uint8_buffer;
+            Csdr::Ringbuffer<Csdr::complex<float>>* float_buffer;
+            Csdr::Ringbuffer<Csdr::complex<uint8_t>>* uint8_buffer;
             void* conversion_buffer;
 
             void init_buffers();
@@ -76,14 +77,14 @@ namespace Owrx {
             template <typename T>
             void swapIQ(T* input, T* output, uint32_t len);
 
-            void convert(uint8_t* input, float* output, uint32_t len);
-            void convert(int16_t* input, float* output, uint32_t len);
-            void convert(int32_t* input, float* output, uint32_t len);
-            void convert(float* input, float* output, uint32_t len);
+            void convert(Csdr::complex<uint8_t>* input, Csdr::complex<float>* output, uint32_t len);
+            void convert(Csdr::complex<int16_t>* input, Csdr::complex<float>* output, uint32_t len);
+            void convert(Csdr::complex<int32_t>* input, Csdr::complex<float>* output, uint32_t len);
+            void convert(Csdr::complex<float>* input, Csdr::complex<float>* output, uint32_t len);
 
-            void convert(uint8_t* input, uint8_t* output, uint32_t len);
-            void convert(int16_t* input, uint8_t* output, uint32_t len);
-            void convert(int32_t* input, uint8_t* output, uint32_t len);
-            void convert(float* input, uint8_t* output, uint32_t len);
+            void convert(Csdr::complex<uint8_t>* input, Csdr::complex<uint8_t>* output, uint32_t len);
+            void convert(Csdr::complex<int16_t>* input, Csdr::complex<uint8_t>* output, uint32_t len);
+            void convert(Csdr::complex<int32_t>* input, Csdr::complex<uint8_t>* output, uint32_t len);
+            void convert(Csdr::complex<float>* input, Csdr::complex<uint8_t>* output, uint32_t len);
     };
 }

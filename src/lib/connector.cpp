@@ -22,9 +22,9 @@ Connector::Connector():
 {}
 
 void Connector::init_buffers() {
-    float_buffer = new Csdr::Ringbuffer<float>(10 * get_buffer_size());
+    float_buffer = new Csdr::Ringbuffer<Csdr::complex<float>>(10 * get_buffer_size());
     if (rtltcp_port > 0) {
-        uint8_buffer = new Csdr::Ringbuffer<uint8_t>(10 * get_buffer_size());
+        uint8_buffer = new Csdr::Ringbuffer<Csdr::complex<uint8_t>>(10 * get_buffer_size());
     }
     // biggest samples that we cane process right now = float
     conversion_buffer = malloc(get_buffer_size() * sizeof(float));
@@ -55,11 +55,11 @@ int Connector::main(int argc, char** argv) {
         new ControlSocket(this, control_port);
     }
 
-    IQSocket<float>* iq_socket = new IQSocket<float>(port, float_buffer);
+    auto iq_socket = new IQSocket<Csdr::complex<float>>(port, float_buffer);
     iq_socket->start();
 
     if (rtltcp_port > 0) {
-        RtlTcpSocket* rtltcp_socket = new RtlTcpSocket(rtltcp_port, uint8_buffer);
+        auto rtltcp_socket = new RtlTcpSocket(rtltcp_port, uint8_buffer);
         rtltcp_socket->start();
     }
 
@@ -353,64 +353,65 @@ void Connector::processSamples(T* input, uint32_t len) {
     }
 }
 
-template void Connector::processSamples<float>(float*, uint32_t);
-template void Connector::processSamples<int16_t>(int16_t*, uint32_t);
-template void Connector::processSamples<int32_t>(int32_t*, uint32_t);
-template void Connector::processSamples<uint8_t>(uint8_t*, uint32_t);
+template void Connector::processSamples<Csdr::complex<float>>(Csdr::complex<float>*, uint32_t);
+template void Connector::processSamples<Csdr::complex<int16_t>>(Csdr::complex<int16_t>* input, uint32_t len);
+template void Connector::processSamples<Csdr::complex<int32_t>>(Csdr::complex<int32_t>* input, uint32_t len);
+template void Connector::processSamples<Csdr::complex<uint8_t>>(Csdr::complex<uint8_t>* input, uint32_t len);
 
 OWRX_CONNECTOR_TARGET_CLONES
-void Connector::convert(uint8_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
+void Connector::convert(Csdr::complex<uint8_t>* __restrict__ input, Csdr::complex<float>* __restrict__ output, uint32_t len) {
     uint32_t i;
-    for (i = 0; i < len; i++) {
-        output[i] = ((float) (input[i])) / (UINT8_MAX / 2.0f) - 1.0f;
+    for (i = 0; i < len * 2; i++) {
+        ((float*) output)[i] = (((float) ((uint8_t*) input)[i])) / (UINT8_MAX / 2.0f) - 1.0f;
     }
 }
 
 OWRX_CONNECTOR_TARGET_CLONES
-void Connector::convert(int16_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
+void Connector::convert(Csdr::complex<int16_t>* __restrict__ input, Csdr::complex<float>* __restrict__ output, uint32_t len) {
     uint32_t i;
-    for (i = 0; i < len; i++) {
-        output[i] = (float)input[i] / INT16_MAX;
+    for (i = 0; i < len * 2; i++) {
+        ((float*) output)[i] = (float) ((int16_t*) input)[i] / INT16_MAX;
     }
 }
 
 OWRX_CONNECTOR_TARGET_CLONES
-void Connector::convert(int32_t* __restrict__ input, float* __restrict__ output, uint32_t len) {
+void Connector::convert(Csdr::complex<int32_t>* __restrict__ input, Csdr::complex<float>* __restrict__ output, uint32_t len) {
     uint32_t i;
-    for (i = 0; i < len; i++) {
-        output[i] = (float)input[i] / INT32_MAX;
+    for (i = 0; i < len * 2; i++) {
+        ((float*) output)[i] = (float) ((int32_t*) input)[i] / INT32_MAX;
     }
 }
 
-void Connector::convert(float* input, float* output, uint32_t len) {
-    std::memcpy(output, input, len * sizeof(float));
+void Connector::convert(Csdr::complex<float>* input, Csdr::complex<float>* output, uint32_t len) {
+    std::memcpy(output, input, len * sizeof(Csdr::complex<float>));
 }
 
-void Connector::convert(uint8_t* input, uint8_t* output, uint32_t len) {
-    std::memcpy(output, input, len * sizeof(uint8_t));
-}
-
-OWRX_CONNECTOR_TARGET_CLONES
-void Connector::convert(int16_t* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
-    uint32_t i;
-    for (i = 0; i < len; i++) {
-        output[i] = input[i] / 32767.0f * 128.0f + 127.4f;
-    }
+void Connector::convert(Csdr::complex<uint8_t>* input, Csdr::complex<uint8_t>* output, uint32_t len) {
+    std::memcpy(output, input, len * sizeof(Csdr::complex<uint8_t>));
 }
 
 OWRX_CONNECTOR_TARGET_CLONES
-void Connector::convert(int32_t* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
+void Connector::convert(Csdr::complex<int16_t>* __restrict__ input, Csdr::complex<uint8_t>* __restrict__ output, uint32_t len) {
     uint32_t i;
-    for (i = 0; i < len; i++) {
-        output[i] = input[i] / (float) INT32_MAX * 128.0f + 127.4f;
+    for (i = 0; i < len * 2; i++) {
+        ((uint8_t*) output)[i] = ((int16_t*) input)[i] / 32767.0f * 128.0f + 127.4f;
     }
 }
 
 OWRX_CONNECTOR_TARGET_CLONES
-void Connector::convert(float* __restrict__ input, uint8_t* __restrict__ output, uint32_t len) {
+void Connector::convert(Csdr::complex<int32_t>* __restrict__ input, Csdr::complex<uint8_t>* __restrict__ output, uint32_t len) {
     uint32_t i;
-    for (i = 0; i < len; i++) {
-        output[i] = input[i] * UCHAR_MAX * 0.5f + 128;
+    for (i = 0; i < len * 2; i++) {
+        ((uint8_t*) output)[i] = ((int32_t*) input)[i] / (float) INT32_MAX * 128.0f + 127.4f;
+    }
+}
+
+OWRX_CONNECTOR_TARGET_CLONES
+void Connector::convert(Csdr::complex<float>* __restrict__ input, Csdr::complex<uint8_t>* __restrict__ output, uint32_t len) {
+    uint32_t i;
+    auto tmp = (float*) input;
+    for (i = 0; i < len * 2; i++) {
+        ((uint8_t*) output)[i] = ((float*) input)[i] * UCHAR_MAX * 0.5f + 128;
     }
 }
 

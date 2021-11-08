@@ -124,7 +124,7 @@ void RtlConnector::callback(unsigned char* buf, uint32_t len) {
         std::cerr << "WARNING: invalid buffer size received; skipping input\n";
         return;
     }
-    processSamples((uint8_t*) buf, len);
+    processSamples((Csdr::complex<uint8_t>*) buf, len / 2);
 }
 
 int RtlConnector::close() {

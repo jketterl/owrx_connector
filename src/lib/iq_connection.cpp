@@ -92,10 +92,10 @@ void IQConnection<T>::loop() {
 }
 
 namespace Owrx {
-    template class IQSocket<float>;
-    template class IQSocket<uint8_t>;
+    template class IQSocket<Csdr::complex<float>>;
+    template class IQSocket<Csdr::complex<uint8_t>>;
 
-    template class IQConnection<float>;
-    template class IQConnection<uint8_t>;
+    template class IQConnection<Csdr::complex<float>>;
+    template class IQConnection<Csdr::complex<uint8_t>>;
 }
 

@@ -128,7 +128,7 @@ int RtlTcpConnector::setup() {
 
 int RtlTcpConnector::read() {
     ssize_t bytes_read;
-    uint8_t* buf = (uint8_t*) malloc(rtl_buffer_size);
+    auto buf = (Csdr::complex<uint8_t>*) malloc(rtl_buffer_size);
 
     while (run) {
         bytes_read = recv(sock, buf, rtl_buffer_size, 0);

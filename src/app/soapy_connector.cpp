@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <getopt.h>
 #include <vector>
+#include <csdr/complex.hpp>
 
 int main (int argc, char** argv) {
     Connector* connector = new SoapyConnector();
@@ -142,11 +143,10 @@ int SoapyConnector::read() {
         // std::cerr << "samples read from sdr: " << samples_read << "\n";
 
         if (samples_read > 0) {
-            uint32_t len = samples_read * 2;
             if (format == SOAPY_SDR_CS16) {
-                processSamples((int16_t*) buf, len);
+                processSamples((Csdr::complex<int16_t>*) buf, samples_read);
             } else if (format == SOAPY_SDR_CF32) {
-                processSamples((float*) buf, len);
+                processSamples((Csdr::complex<float>*) buf, samples_read);
             }
         } else if (samples_read == SOAPY_SDR_OVERFLOW) {
             // overflows do happen, they are non-fatal. a warning should do
