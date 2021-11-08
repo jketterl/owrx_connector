@@ -12,7 +12,6 @@ namespace Owrx {
 
     // forward class definitions for the internal API
     class GainSpec;
-    template <typename T> class Ringbuffer;
 
     class Connector {
         public:
