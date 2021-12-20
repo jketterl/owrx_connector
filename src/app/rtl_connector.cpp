@@ -205,7 +205,7 @@ void RtlConnector::applyChange(std::string key, std::string value) {
         r = set_direct_sampling(direct_sampling);
 #if HAS_RTLSDR_SET_BIAS_TEE
     } else if (key == "bias_tee") {
-        bias_tee = std::stoi(value);
+        bias_tee = convertBooleanValue(value);
         r = set_bias_tee(bias_tee);
 #endif
     } else {

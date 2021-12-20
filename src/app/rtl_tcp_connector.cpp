@@ -155,7 +155,7 @@ void RtlTcpConnector::applyChange(std::string key, std::string value) {
         direct_sampling = convertBooleanValue(value);
         r = set_direct_sampling(direct_sampling);
     } else if (key == "bias_tee") {
-        bias_tee = std::stoi(value);
+        bias_tee = convertBooleanValue(value);
         r = set_bias_tee(bias_tee);
     } else {
         Connector::applyChange(key, value);
