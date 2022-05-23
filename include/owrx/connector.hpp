@@ -16,6 +16,7 @@ namespace Owrx {
     class Connector {
         public:
             Connector();
+            virtual ~Connector() = default;
             int main(int argc, char** argv);
             void handle_signal(int signal);
 
