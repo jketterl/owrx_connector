@@ -1,5 +1,8 @@
 owrx-connector (0.6.0) UNRELEASED; urgency=low
 
+  * Switch to csdr ringbuffer implementation
+  * Fix some memory leaks
+
  -- Jakob Ketterl <jakob.ketterl@gmx.de>  Mon, 02 Aug 2021 19:48:00 +0000
 
 owrx-connector (0.5.0) buster hirsute; urgency=low
