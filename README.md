@@ -20,10 +20,11 @@ that applications using rtl_tcp compatibiltiy will not be able to control the SD
 
 ## Dependencies
 
-- If you want to work with rtlsdr devices, you will need to install the corresponding header files (on Debian:
-  `apt-get install librtlsdr-dev`)
-- If you want to work with devices supported by SoapySDR, you will need to install the corresponding header files
-  (on Debian: `apt-get install libsoapysdr-dev`)
+- Please install [csdr](https://github.com/jketterl/csdr) (version 0.18 or newer) before compiling this project.
+- (optional) If you want to work with rtlsdr devices, you will need to install the corresponding header files (on 
+  Debian: `apt-get install librtlsdr-dev`)
+- (optional) If you want to work with devices supported by SoapySDR, you will need to install the corresponding header
+  files (on Debian: `apt-get install libsoapysdr-dev`)
 
 If you have compiled rtlsdr / soapy from source, you should not need to worry about this. The installation should place
 the headers in their correct locations.
