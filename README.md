@@ -9,14 +9,17 @@ For this purpose, there's two sockets on every connector:
 
 By default, the IQ sample format is 32bit floats.
 
-## rtl_tcp compatibility
+## `rtl_tcp` compatibility
 
-The data socket will detect if the connected application is sending any data. If it does, it will assume that the
-connected client is an application attempting to talk to rtl_tcp, and switch the output format on the corresponding
-connection to 8bit unsigned int, which is the default format of rtl_tcp.
+For backwards compatibility, the connectors can additionally provide a secondary socket that provides data in a format
+compatible with `rtl_tcp`. Use the `--rtltcp` option together with the port number you would like to use.
 
-The connector does not evaluate any data on client connections, so rtl_tcp commands will be discarded. This means
-that applications using rtl_tcp compatibiltiy will not be able to control the SDR hardware.
+If necessary, the connector will resample the IQ data to an 8 bit data stream as required by the protocol. This means
+that if your SDR device has a higher sample depth, a loss of data will occur, so other options should probably be
+preferred.
+
+The connectors do not evaluate any data on an `rtl_tcp` client connection, so any incoming commands will be discarded.
+This means that applications using `rtl_tcp` compatibiltiy will not be able to control the SDR hardware.
 
 ## Dependencies
 
