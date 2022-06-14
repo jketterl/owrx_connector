@@ -1,9 +1,9 @@
-owrx-connector (0.6.0) UNRELEASED; urgency=low
+owrx-connector (0.6.0) bullseye jammy; urgency=low
 
   * Switch to csdr ringbuffer implementation
   * Fix some memory leaks
 
- -- Jakob Ketterl <jakob.ketterl@gmx.de>  Mon, 02 Aug 2021 19:48:00 +0000
+ -- Jakob Ketterl <jakob.ketterl@gmx.de>  Tue, 14 Jun 2022 20:24:00 +0000
 
 owrx-connector (0.5.0) buster hirsute; urgency=low
 

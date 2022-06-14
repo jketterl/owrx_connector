@@ -9,7 +9,7 @@ if (CMAKE_BUILD_TYPE STREQUAL None)
 endif()
 
 project (owrx-connector VERSION 0.6.0)
-add_definitions(-DVERSION="${PROJECT_VERSION}-dev")
+add_definitions(-DVERSION="${PROJECT_VERSION}")
 
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 11)
