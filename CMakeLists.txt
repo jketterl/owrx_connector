@@ -8,8 +8,8 @@ if (CMAKE_BUILD_TYPE STREQUAL None)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-project (owrx-connector VERSION 0.6.0)
-add_definitions(-DVERSION="${PROJECT_VERSION}")
+project (owrx-connector VERSION 0.7.0)
+add_definitions(-DVERSION="${PROJECT_VERSION}-dev")
 
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 11)
