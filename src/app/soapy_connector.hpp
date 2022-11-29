@@ -9,6 +9,7 @@
 using namespace Owrx;
 
 #define SOAPY_BUFFER_SIZE 64512 * 4
+#define SOAPY_RESTART_SECS 60
 
 class SoapyConnector: public Connector {
     public:
