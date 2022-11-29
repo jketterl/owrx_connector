@@ -120,6 +120,7 @@ int SoapyConnector::read() {
     long long timeNs = 0;
     long timeoutNs = 1E6;
     int flags = 0;
+    int timeouts = 0;
 
     //SoapySDRKwargs stream_args = {0};
     size_t num_channels = dev->getNumChannels(SOAPY_SDR_RX);
@@ -148,13 +149,22 @@ int SoapyConnector::read() {
             } else if (format == SOAPY_SDR_CF32) {
                 processSamples((float*) buf, len);
             }
+            timeouts = 0;
         } else if (samples_read == SOAPY_SDR_OVERFLOW) {
             // overflows do happen, they are non-fatal. a warning should do
             std::cerr << "WARNING: Soapy overflow\n";
+            timeouts = 0;
         } else if (samples_read == SOAPY_SDR_TIMEOUT) {
             // timeout should not break the read loop.
             // TODO or should they? I tried, but airspyhf devices will end up here on sample rate changes.
             std::cerr << "WARNING: SoapySDR::Device::readStream timeout!\n";
+
+            // If timeouts continue, try reactivating stream
+            if (++timeouts >= 100) {
+                dev->deactivateStream(stream);
+                dev->activateStream(stream);
+                timeouts = 0;
+            }
         } else {
             // other errors should break the read loop.
             std::cerr << "ERROR: Soapy error " << samples_read << "\n";
