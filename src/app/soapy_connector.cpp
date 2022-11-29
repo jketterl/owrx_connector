@@ -160,7 +160,8 @@ int SoapyConnector::read() {
             std::cerr << "WARNING: SoapySDR::Device::readStream timeout!\n";
 
             // If timeouts continue, try reactivating stream
-            if (++timeouts >= 100) {
+            if (++timeouts >= SOAPY_MAX_TIMEOUTS) {
+                std::cerr << "WARNING: Too many timeouts, restarting!\n";
                 dev->deactivateStream(stream);
                 dev->activateStream(stream);
                 timeouts = 0;
