@@ -139,7 +139,7 @@ int SoapyConnector::read() {
 
     while (run) {
         samples_read = dev->readStream(stream, buffs, soapy_buffer_size, flags, timeNs, timeoutNs);
-        // std::cerr << "samples read from sdr: " << samples_read << "\n";
+        // std::cout << "samples read from sdr: " << samples_read << "\n";
 
         if (samples_read > 0) {
             uint32_t len = samples_read * 2;

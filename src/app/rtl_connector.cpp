@@ -140,12 +140,12 @@ int RtlConnector::verbose_device_search(char const *s) {
         std::cerr << "No supported devices found.\n";
         return -1;
     }
-    std::cerr << "Found " << device_count << " device(s):\n";
+    std::cout << "Found " << device_count << " device(s):\n";
     for (i = 0; i < device_count; i++) {
         rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-        std::cerr << "  " << i << ":  " << vendor << ", " << product << ", SN: " << serial << "\n";
+        std::cout << "  " << i << ":  " << vendor << ", " << product << ", SN: " << serial << "\n";
     }
-    std::cerr << "\n";
+    std::cout << "\n";
     /* if no device has been selected by the user, use the first one */
     if (s == nullptr) {
         if (device_count > 0) return 0;
@@ -158,7 +158,7 @@ int RtlConnector::verbose_device_search(char const *s) {
             rtlsdr_get_device_usb_strings(i, vendor, product, serial);
             if (strcmp(s2, serial) == 0) {
                 device = i;
-                std::cerr << "Using device " << device << ": " <<
+                std::cout << "Using device " << device << ": " <<
                     rtlsdr_get_device_name((uint32_t)device) << "\n";
                 return device;
             }
@@ -167,7 +167,7 @@ int RtlConnector::verbose_device_search(char const *s) {
     } else if (strncmp(s, "index=", 6) == 0) {
         device = (int)strtol((char *) s + 6, &s2, 0);
         if (s2[0] == '\0' && device >= 0 && device < device_count) {
-            std::cerr << "Using device " << device << ": " <<
+            std::cout << "Using device " << device << ": " <<
                 rtlsdr_get_device_name((uint32_t)device) << "\n";
             return device;
         }
@@ -177,7 +177,7 @@ int RtlConnector::verbose_device_search(char const *s) {
             rtlsdr_get_device_usb_strings(i, vendor, product, serial);
             if (strcmp(s, serial) == 0) {
                 device = i;
-                std::cerr << "Using device " << device << ": " <<
+                std::cout << "Using device " << device << ": " <<
                     rtlsdr_get_device_name((uint32_t)device) << "\n";
                 return device;
             }
@@ -185,7 +185,7 @@ int RtlConnector::verbose_device_search(char const *s) {
         /* does string look like raw id number */
         device = (int)strtol(s, &s2, 0);
         if (s2[0] == '\0' && device >= 0 && device < device_count) {
-            std::cerr << "Using device " << device << ": " <<
+            std::cout << "Using device " << device << ": " <<
                 rtlsdr_get_device_name((uint32_t)device) << "\n";
             return device;
         }
