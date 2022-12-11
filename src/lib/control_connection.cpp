@@ -11,7 +11,7 @@ ControlSocket::ControlSocket(Connector* new_connector, uint16_t port) {
     struct sockaddr_in local;
     const char* addr = "127.0.0.1";
 
-    std::cout << "setting up control socket...\n";
+    std::cout << "setting up control socket..." << std::endl;
 
     std::memset(&local, 0, sizeof(local));
     local.sin_family = AF_INET;
@@ -24,7 +24,7 @@ ControlSocket::ControlSocket(Connector* new_connector, uint16_t port) {
     bind(sock, (struct sockaddr *)&local, sizeof(local));
     listen(sock, 1);
 
-    std::cout << "control socket started on " << port << "\n";
+    std::cout << "control socket started on " << port << std::endl;
 
     thread = std::thread([this] { loop(); });
 }
@@ -36,7 +36,7 @@ void ControlSocket::loop() {
     while (run) {
         socklen_t rlen = sizeof(remote);
         int control_sock = accept(sock, (struct sockaddr *)&remote, &rlen);
-        std::cout << "control connection established\n";
+        std::cout << "control connection established" << std::endl;
 
         bool run = true;
         uint8_t buf[256];
@@ -54,7 +54,7 @@ void ControlSocket::loop() {
 
                     size_t colon_pos = line.find(':');
                     if (colon_pos == std::string::npos) {
-                        std::cerr << "invalid message: \"" << line << "\"\n";
+                        std::cerr << "invalid message: \"" << line << "\"" << std::endl;
                         continue;
                     }
 
@@ -65,6 +65,6 @@ void ControlSocket::loop() {
                 }
             }
         }
-        std::cout << "control connection ended\n";
+        std::cout << "control connection ended" << std::endl;
     }
 }

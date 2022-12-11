@@ -69,19 +69,19 @@ int RtlTcpConnector::parse_arguments(int argc, char** argv) {
 }
 
 void RtlTcpConnector::print_version() {
-    std::cout << "rtl_tcp_connector version " << VERSION << "\n";
+    std::cout << "rtl_tcp_connector version " << VERSION << std::endl;
     Connector::print_version();
 }
 
 int RtlTcpConnector::open() {
     struct hostent* hp = gethostbyname(host.c_str());
     if (hp == NULL) {
-        std::cerr << "gethostbyname() failed\n";
+        std::cerr << "gethostbyname() failed" << std::endl;
         return 3;
     }
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        std::cerr << "rtl_tcp socket creation error: " << sock << "\n";
+        std::cerr << "rtl_tcp socket creation error: " << sock << std::endl;
         return 1;
     }
 
@@ -111,14 +111,14 @@ int RtlTcpConnector::setup() {
 
     r = set_bias_tee( bias_tee);
     if (r != 0) {
-        std::cerr << "setting biastee failed\n";
+        std::cerr << "setting biastee failed" << std::endl;
         return 10;
     }
 
     if (direct_sampling >= 0 && direct_sampling <= 2) {
         r = set_direct_sampling(direct_sampling);
         if (r != 0) {
-            std::cerr << "setting direct sampling mode failed\n";
+            std::cerr << "setting direct sampling mode failed" << std::endl;
             return 11;
         }
     }
@@ -162,7 +162,7 @@ void RtlTcpConnector::applyChange(std::string key, std::string value) {
         return;
     }
     if (r != 0) {
-        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << "\n";
+        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << std::endl;
     }
 }
 
@@ -183,20 +183,20 @@ int RtlTcpConnector::set_gain(GainSpec* gain) {
     if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
         int r = send_command((struct command) {0x03, htonl(1)});
         if (r < 0) {
-            std::cerr << "setting gain mode failed\n";
+            std::cerr << "setting gain mode failed" << std::endl;
             return 2;
         }
 
         r = send_command((struct command) {0x04, htonl(simple_gain->getValue() * 10)});
         if (r < 0) {
-            std::cerr << "setting gain failed\n";
+            std::cerr << "setting gain failed" << std::endl;
             return 3;
         }
 
         return 0;
     }
 
-    std::cerr << "unsupported gain settings\n";
+    std::cerr << "unsupported gain settings" << std::endl;
     return 100;
 }
 

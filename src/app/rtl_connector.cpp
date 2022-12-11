@@ -45,7 +45,7 @@ int RtlConnector::receive_option(int c, char* optarg) {
 }
 
 void RtlConnector::print_version() {
-    std::cout << "rtl_connector version " << VERSION << "\n";
+    std::cout << "rtl_connector version " << VERSION << std::endl;
     Connector::print_version();
 }
 
@@ -53,13 +53,13 @@ int RtlConnector::open() {
     int dev_index = verbose_device_search(device_id);
 
     if (dev_index < 0) {
-        std::cerr << "no device found.\n";
+        std::cerr << "no device found." << std::endl;
         return 1;
     }
 
     rtlsdr_open(&dev, (uint32_t)dev_index);
     if (NULL == dev) {
-        std::cerr << "device could not be opened\n";
+        std::cerr << "device could not be opened" << std::endl;
         return 2;
     }
 
@@ -73,7 +73,7 @@ int RtlConnector::setup() {
 #if HAS_RTLSDR_SET_BIAS_TEE
     r = set_bias_tee( bias_tee);
     if (r != 0) {
-        std::cerr << "setting biastee failed\n";
+        std::cerr << "setting biastee failed" << std::endl;
         return 10;
     }
 #endif
@@ -81,7 +81,7 @@ int RtlConnector::setup() {
     if (direct_sampling >= 0 && direct_sampling <= 2) {
         r = set_direct_sampling(direct_sampling);
         if (r != 0) {
-            std::cerr << "setting direct sampling mode failed\n";
+            std::cerr << "setting direct sampling mode failed" << std::endl;
             return 11;
         }
     }
@@ -99,12 +99,12 @@ int RtlConnector::read() {
 
     r = rtlsdr_reset_buffer(dev);
     if (r < 0) {
-        std::cerr <<  "WARNING: Failed to reset buffers.\n";
+        std::cerr <<  "WARNING: Failed to reset buffers." << std::endl;
     }
 
     r = rtlsdr_read_async(dev, rtlsdr_callback, this, buf_num, rtl_buffer_size);
     if (r != 0) {
-        std::cerr << "WARNING: rtlsdr_read_async failed with r = " << r << "\n";
+        std::cerr << "WARNING: rtlsdr_read_async failed with r = " << r << std::endl;
     }
 
     return 0;
@@ -113,7 +113,7 @@ int RtlConnector::read() {
 int RtlConnector::stop() {
     int r = rtlsdr_cancel_async(dev);
     if (r != 0) {
-        std::cerr << "WARNING: rtlsdr_cancel_async failed\n";
+        std::cerr << "WARNING: rtlsdr_cancel_async failed" << std::endl;
         return r;
     }
     return Connector::stop();
@@ -121,7 +121,7 @@ int RtlConnector::stop() {
 
 void RtlConnector::callback(unsigned char* buf, uint32_t len) {
     if (len != rtl_buffer_size) {
-        std::cerr << "WARNING: invalid buffer size received; skipping input\n";
+        std::cerr << "WARNING: invalid buffer size received; skipping input" << std::endl;
         return;
     }
     processSamples((uint8_t*) buf, len);
@@ -137,7 +137,7 @@ int RtlConnector::verbose_device_search(char const *s) {
     char vendor[256], product[256], serial[256];
     device_count = rtlsdr_get_device_count();
     if (!device_count) {
-        std::cerr << "No supported devices found.\n";
+        std::cerr << "No supported devices found." << std::endl;
         return -1;
     }
     std::cout << "Found " << device_count << " device(s):\n";
@@ -145,10 +145,15 @@ int RtlConnector::verbose_device_search(char const *s) {
         rtlsdr_get_device_usb_strings(i, vendor, product, serial);
         std::cout << "  " << i << ":  " << vendor << ", " << product << ", SN: " << serial << "\n";
     }
-    std::cout << "\n";
+    std::cout << std::endl;
     /* if no device has been selected by the user, use the first one */
     if (s == nullptr) {
-        if (device_count > 0) return 0;
+        if (device_count > 0) {
+            device = 0;
+            std::cout << "Using device " << device << ": " <<
+                rtlsdr_get_device_name((uint32_t)device) << std::endl;
+            return device;
+        }
         return -1;
     }
     /* does string begin with "serial=" and exact match a serial */
@@ -159,7 +164,7 @@ int RtlConnector::verbose_device_search(char const *s) {
             if (strcmp(s2, serial) == 0) {
                 device = i;
                 std::cout << "Using device " << device << ": " <<
-                    rtlsdr_get_device_name((uint32_t)device) << "\n";
+                    rtlsdr_get_device_name((uint32_t)device) << std::endl;
                 return device;
             }
         }
@@ -168,7 +173,7 @@ int RtlConnector::verbose_device_search(char const *s) {
         device = (int)strtol((char *) s + 6, &s2, 0);
         if (s2[0] == '\0' && device >= 0 && device < device_count) {
             std::cout << "Using device " << device << ": " <<
-                rtlsdr_get_device_name((uint32_t)device) << "\n";
+                rtlsdr_get_device_name((uint32_t)device) << std::endl;
             return device;
         }
     } else {
@@ -178,7 +183,7 @@ int RtlConnector::verbose_device_search(char const *s) {
             if (strcmp(s, serial) == 0) {
                 device = i;
                 std::cout << "Using device " << device << ": " <<
-                    rtlsdr_get_device_name((uint32_t)device) << "\n";
+                    rtlsdr_get_device_name((uint32_t)device) << std::endl;
                 return device;
             }
         }
@@ -186,11 +191,11 @@ int RtlConnector::verbose_device_search(char const *s) {
         device = (int)strtol(s, &s2, 0);
         if (s2[0] == '\0' && device >= 0 && device < device_count) {
             std::cout << "Using device " << device << ": " <<
-                rtlsdr_get_device_name((uint32_t)device) << "\n";
+                rtlsdr_get_device_name((uint32_t)device) << std::endl;
             return device;
         }
     }
-    std::cerr << "No matching devices found.\n";
+    std::cerr << "No matching devices found." << std::endl;
     return -1;
 }
 
@@ -213,7 +218,7 @@ void RtlConnector::applyChange(std::string key, std::string value) {
         return;
     }
     if (r != 0) {
-        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << "\n";
+        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << std::endl;
     }
 }
 
@@ -230,7 +235,7 @@ int RtlConnector::set_gain(GainSpec* gain) {
     if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
         r = rtlsdr_set_tuner_gain_mode(dev, 0);
         if (r < 0) {
-            std::cerr << "setting gain mode failed\n";
+            std::cerr << "setting gain mode failed" << std::endl;
             return 1;
         }
         return 0;
@@ -240,19 +245,19 @@ int RtlConnector::set_gain(GainSpec* gain) {
     if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
         r = rtlsdr_set_tuner_gain_mode(dev, 1);
         if (r < 0) {
-            std::cerr << "setting gain mode failed\n";
+            std::cerr << "setting gain mode failed" << std::endl;
             return 2;
         }
 
         r = rtlsdr_set_tuner_gain(dev, (int)(simple_gain->getValue() * 10));
         if (r < 0) {
-            std::cerr << "setting gain failed\n";
+            std::cerr << "setting gain failed" << std::endl;
             return 3;
         }
         return 0;
     }
 
-    std::cerr << "unsupported gain settings\n";
+    std::cerr << "unsupported gain settings" << std::endl;
     return 100;
 
     return 0;
@@ -271,20 +276,20 @@ int RtlConnector::set_direct_sampling(int new_direct_sampling) {
     int r;
     r = rtlsdr_set_direct_sampling(dev, new_direct_sampling);
     if (r != 0) {
-        std::cerr << "rtlsdr_set_direct_sampling() failed with rc = " << r << "\n";
+        std::cerr << "rtlsdr_set_direct_sampling() failed with rc = " << r << std::endl;
         return r;
     }
     // switching direct sampling mode requires setting the frequency again
     r = set_center_frequency(get_center_frequency());
     if (r != 0) {
-        std::cerr << "set_center_frequency() failed with rc = " << r << "\n";
+        std::cerr << "set_center_frequency() failed with rc = " << r << std::endl;
         return r;
     }
     if (direct_sampling == 0) {
         // gain is off when switching out of direct sampling, so reset it
         r = set_gain(get_gain());
         if (r != 0) {
-            std::cerr << "set_gain() failed with rc = " << r << "\n";
+            std::cerr << "set_gain() failed with rc = " << r << std::endl;
             return r;
         }
     }

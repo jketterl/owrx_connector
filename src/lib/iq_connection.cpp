@@ -24,7 +24,7 @@ IQSocket<T>::IQSocket(uint16_t port, Csdr::Ringbuffer<T>* new_ringbuffer) {
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
     bind(sock, (struct sockaddr *)&local, sizeof(local));
 
-    std::cout << "socket setup complete, waiting for connections\n";
+    std::cout << "socket setup complete, waiting for connections" << std::endl;
 
     listen(sock, 1);
 }
@@ -72,7 +72,7 @@ void IQConnection<T>::sendHeaders() {
 
 template <typename T>
 void IQConnection<T>::loop() {
-    std::cout << "client connection established\n";
+    std::cout << "client connection established" << std::endl;
 
     ssize_t sent;
 
@@ -87,7 +87,7 @@ void IQConnection<T>::loop() {
             }
         }
     }
-    std::cout << "closing client socket\n";
+    std::cout << "closing client socket" << std::endl;
     close(sock);
 }
 

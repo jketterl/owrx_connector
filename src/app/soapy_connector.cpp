@@ -44,7 +44,7 @@ int SoapyConnector::receive_option(int c, char* optarg) {
 }
 
 void SoapyConnector::print_version() {
-    std::cout << "soapy_connector version " << VERSION << "\n";
+    std::cout << "soapy_connector version " << VERSION << std::endl;
     Connector::print_version();
 }
 
@@ -53,7 +53,7 @@ int SoapyConnector::open() {
         dev = SoapySDR::Device::make(device_id == nullptr ? "" : std::string(device_id));
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 };
@@ -63,7 +63,7 @@ int SoapyConnector::setup() {
     if (antenna != "") {
         r = setAntenna(antenna);
         if (r != 0) {
-            std::cerr << "Setting antenna failed\n";
+            std::cerr << "Setting antenna failed" << std::endl;
             return 1;
         }
     }
@@ -74,7 +74,7 @@ int SoapyConnector::setup() {
     if (settings != "") {
         r = setSettings(settings);
         if (r != 0) {
-            std::cerr << "Setting settings failed\n";
+            std::cerr << "Setting settings failed" << std::endl;
             return 1;
         }
     }
@@ -87,7 +87,7 @@ int SoapyConnector::setAntenna(std::string antenna) {
         dev->setAntenna(SOAPY_SDR_RX, channel, antenna);
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 }
@@ -100,7 +100,7 @@ int SoapyConnector::setSettings(std::string settings) {
         try {
             dev->writeSetting(key, value);
         } catch (const std::exception& e) {
-            std::cerr << "WARNING: setting key " << key << "failed: " << e.what() << "\n";
+            std::cerr << "WARNING: setting key " << key << "failed: " << e.what() << std::endl;
         }
     }
     return 0;
@@ -124,7 +124,7 @@ int SoapyConnector::read() {
     //SoapySDRKwargs stream_args = {0};
     size_t num_channels = dev->getNumChannels(SOAPY_SDR_RX);
     if (((size_t) channel) >= num_channels){
-        std::cerr << "Invalid channel " << channel << " selected\n";
+        std::cerr << "Invalid channel " << channel << " selected" << std::endl;
         return 9;
     }
 
@@ -132,14 +132,14 @@ int SoapyConnector::read() {
     try {
         stream = dev->setupStream(SOAPY_SDR_RX, format, std::vector<size_t>{channel});
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         return 10;
     }
     dev->activateStream(stream);
 
     while (run) {
         samples_read = dev->readStream(stream, buffs, soapy_buffer_size, flags, timeNs, timeoutNs);
-        // std::cout << "samples read from sdr: " << samples_read << "\n";
+        // std::cout << "samples read from sdr: " << samples_read << std::endl;
 
         if (samples_read > 0) {
             uint32_t len = samples_read * 2;
@@ -150,14 +150,14 @@ int SoapyConnector::read() {
             }
         } else if (samples_read == SOAPY_SDR_OVERFLOW) {
             // overflows do happen, they are non-fatal. a warning should do
-            std::cerr << "WARNING: Soapy overflow\n";
+            std::cerr << "WARNING: Soapy overflow" << std::endl;
         } else if (samples_read == SOAPY_SDR_TIMEOUT) {
             // timeout should not break the read loop.
             // TODO or should they? I tried, but airspyhf devices will end up here on sample rate changes.
-            std::cerr << "WARNING: SoapySDR::Device::readStream timeout!\n";
+            std::cerr << "WARNING: SoapySDR::Device::readStream timeout!" << std::endl;
         } else {
             // other errors should break the read loop.
-            std::cerr << "ERROR: Soapy error " << samples_read << "\n";
+            std::cerr << "ERROR: Soapy error " << samples_read << std::endl;
             break;
         }
     }
@@ -173,7 +173,7 @@ int SoapyConnector::close() {
         dev = nullptr;
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 };
@@ -183,7 +183,7 @@ int SoapyConnector::set_center_frequency(double frequency) {
         dev->setFrequency(SOAPY_SDR_RX, channel, frequency);
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 };
@@ -193,7 +193,7 @@ int SoapyConnector::set_sample_rate(double sample_rate) {
         dev->setSampleRate(SOAPY_SDR_RX, channel, sample_rate);
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 };
@@ -211,7 +211,7 @@ void SoapyConnector::applyChange(std::string key, std::string value) {
         return;
     }
     if (r != 0) {
-        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << "\n";
+        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << std::endl;
     }
 }
 
@@ -222,7 +222,7 @@ int SoapyConnector::set_gain(GainSpec* gain) {
         try {
             dev->setGainMode(SOAPY_SDR_RX, channel, true);
         } catch (const std::exception& e) {
-            std::cerr << e.what() << "\n";
+            std::cerr << e.what() << std::endl;
             return 1;
         }
     } else if ((simple_gain = dynamic_cast<SimpleGainSpec*>(gain)) != nullptr) {
@@ -230,7 +230,7 @@ int SoapyConnector::set_gain(GainSpec* gain) {
             dev->setGainMode(SOAPY_SDR_RX, channel, false);
             dev->setGain(SOAPY_SDR_RX, channel, simple_gain->getValue());
         } catch (const std::exception& e) {
-            std::cerr << e.what() << "\n";
+            std::cerr << e.what() << std::endl;
             return 1;
         }
     } else if ((multi_gain = dynamic_cast<MultiGainSpec*>(gain)) != nullptr) {
@@ -241,11 +241,11 @@ int SoapyConnector::set_gain(GainSpec* gain) {
                 dev->setGain(SOAPY_SDR_RX, channel, p.first, std::stod(p.second));
             }
         } catch (const std::exception& e) {
-            std::cerr << e.what() << "\n";
+            std::cerr << e.what() << std::endl;
             return 1;
         }
     } else {
-        std::cerr << "unsupported gain settings\n";
+        std::cerr << "unsupported gain settings" << std::endl;
         return 100;
     }
 
@@ -261,7 +261,7 @@ int SoapyConnector::set_ppm(double ppm) {
 #endif
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 };

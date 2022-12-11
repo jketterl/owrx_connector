@@ -66,25 +66,25 @@ int Connector::main(int argc, char** argv) {
     while (run) {
         r = open();
         if (r != 0) {
-            std::cerr << "Connector::open() failed\n";
+            std::cerr << "Connector::open() failed" << std::endl;
             return 1;
         }
 
         r = setup();
         if (r != 0) {
-            std::cerr << "Connector::setup() failed\n";
+            std::cerr << "Connector::setup() failed" << std::endl;
             return 2;
         }
 
         r = read();
         if (r != 0) {
-            std::cerr << "Connector::read() failed\n";
+            std::cerr << "Connector::read() failed" << std::endl;
             return 3;
         }
 
         r = close();
         if (r != 0) {
-            std::cerr << "Connector::close() failed\n";
+            std::cerr << "Connector::close() failed" << std::endl;
             return 4;
         }
 
@@ -95,7 +95,7 @@ int Connector::main(int argc, char** argv) {
 }
 
 void Connector::handle_signal(int signal) {
-    std::cerr << "received signal: " << signal << "\n";
+    std::cerr << "received signal: " << signal << std::endl;
     stop();
 }
 
@@ -208,7 +208,7 @@ void Connector::print_usage() {
 }
 
 void Connector::print_version() {
-    std::cout << "libowrx-connector version " << VERSION << "\n";
+    std::cout << "libowrx-connector version " << VERSION << std::endl;
 }
 
 int Connector::setup() {
@@ -216,37 +216,37 @@ int Connector::setup() {
 
     r = set_center_frequency(center_frequency);
     if (r != 0) {
-        std::cerr << "setting center frequency failed\n";
+        std::cerr << "setting center frequency failed" << std::endl;
         return 2;
     }
 
     r = set_sample_rate(sample_rate);
     if (r != 0) {
-        std::cerr << "setting sample rate failed\n";
+        std::cerr << "setting sample rate failed" << std::endl;
         return 3;
     }
 
     r = set_ppm(ppm);
     if (r != 0) {
-        std::cerr << "setting ppm failed\n";
+        std::cerr << "setting ppm failed" << std::endl;
         return 4;
     }
 
     r = set_gain(gain);
     if (r != 0) {
-        std::cerr << "setting gain failed\n";
+        std::cerr << "setting gain failed" << std::endl;
         return 5;
     }
 
     r = set_iqswap(iqswap);
     if (r != 0) {
-        std::cerr << "setting iqswap failed\n";
+        std::cerr << "setting iqswap failed" << std::endl;
         return 6;
     }
 
     r = set_rtltcp_port(rtltcp_port);
     if (r != 0) {
-        std::cerr << "setting rtltcp_compat failed\n";
+        std::cerr << "setting rtltcp_compat failed" << std::endl;
         return 7;
     }
 
@@ -307,10 +307,10 @@ void Connector::applyChange(std::string key, std::string value) {
         iqswap = convertBooleanValue(value);
         r = set_iqswap(iqswap);
     } else {
-        std::cerr << "could not set unknown key: \"" << key << "\"\n";
+        std::cerr << "could not set unknown key: \"" << key << "\"" << std::endl;
     }
     if (r != 0) {
-        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << "\n";
+        std::cerr << "WARNING: setting \"" << key << "\" failed: " << r << std::endl;
     }
 }
 
