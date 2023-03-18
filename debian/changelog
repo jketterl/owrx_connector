@@ -1,5 +1,7 @@
 owrx-connector (0.7.0) UNRELEASED; urgency=low
 
+  * Added a "listdrivers" command to the soapy_connector
+
  -- Jakob Ketterl <jakob.ketterl@gmx.de>  Thu, 16 Jun 2022 17:46:00 +0000
 
 owrx-connector (0.6.1) bullseye jammy; urgency=low

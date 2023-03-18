@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <getopt.h>
 #include <vector>
+#include <SoapySDR/Modules.hpp>
+#include <SoapySDR/Registry.hpp>
 
 int main (int argc, char** argv) {
     Connector* connector = new SoapyConnector();
@@ -18,7 +20,8 @@ std::stringstream SoapyConnector::get_usage_string() {
     std::stringstream s = Connector::get_usage_string();
     s <<
         " -a, --antenna           select antenna input\n" <<
-        " -t, --settings          set sdr specific settings\n";
+        " -t, --settings          set sdr specific settings\n" <<
+        " -l, --listdrivers       list installed SoapySDR drivers\n";
     return s;
 }
 
@@ -26,6 +29,7 @@ std::vector<struct option> SoapyConnector::getopt_long_options() {
     std::vector<struct option> long_options = Connector::getopt_long_options();
     long_options.push_back({"antenna", required_argument, NULL, 'a'});
     long_options.push_back({"settings", required_argument, NULL, 't'});
+    long_options.push_back({"listdrivers", no_argument, NULL, 'l'});
     return long_options;
 }
 
@@ -37,6 +41,9 @@ int SoapyConnector::receive_option(int c, char* optarg) {
         case 't':
             settings = std::string(optarg);
             break;
+        case 'l':
+            listDrivers();
+            return 1;
         default:
             return Connector::receive_option(c, optarg);
     }
@@ -46,6 +53,18 @@ int SoapyConnector::receive_option(int c, char* optarg) {
 void SoapyConnector::print_version() {
     std::cout << "soapy_connector version " << VERSION << std::endl;
     Connector::print_version();
+}
+
+void SoapyConnector::listDrivers() {
+    // populate the registry
+    for (const auto &mod : SoapySDR::listModules()) {
+        SoapySDR::loadModule(mod);
+    }
+
+    // then print drivers, one per line
+    for (const auto &it : SoapySDR::Registry::listFindFunctions()) {
+        std::cout << it.first << std::endl;
+    }
 }
 
 int SoapyConnector::open() {

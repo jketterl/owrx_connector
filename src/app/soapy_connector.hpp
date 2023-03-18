@@ -36,4 +36,5 @@ class SoapyConnector: public Connector {
         int receive_option(int c, char* optarg) override;
         int setAntenna(std::string antenna);
         int setSettings(std::string settings);
+        static void listDrivers();
 };
