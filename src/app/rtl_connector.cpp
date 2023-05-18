@@ -67,7 +67,16 @@ int RtlConnector::open() {
 }
 
 int RtlConnector::setup() {
-    int r = Connector::setup();
+    int r;
+    if (direct_sampling >= 0 && direct_sampling <= 2) {
+        r = set_direct_sampling(direct_sampling);
+        if (r != 0) {
+            std::cerr << "setting direct sampling mode failed" << std::endl;
+            return 11;
+        }
+    }
+
+    r = Connector::setup();
     if (r != 0) return r;
 
 #if HAS_RTLSDR_SET_BIAS_TEE
@@ -77,14 +86,6 @@ int RtlConnector::setup() {
         return 10;
     }
 #endif
-
-    if (direct_sampling >= 0 && direct_sampling <= 2) {
-        r = set_direct_sampling(direct_sampling);
-        if (r != 0) {
-            std::cerr << "setting direct sampling mode failed" << std::endl;
-            return 11;
-        }
-    }
 
     return 0;
 }
