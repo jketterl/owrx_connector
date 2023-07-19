@@ -21,7 +21,13 @@ preferred.
 The connectors do not evaluate any data on an `rtl_tcp` client connection, so any incoming commands will be discarded.
 This means that applications using `rtl_tcp` compatibiltiy will not be able to control the SDR hardware.
 
-## Dependencies
+## Installation
+
+The OpenWebRX project is hosting owrx-connector packages in their repositories. Please click the respective link for [Debian](https://www.openwebrx.de/download/debian.php) or [Ubuntu](https://www.openwebrx.de/download/ubuntu.php).
+
+## Compiling from source
+
+### Dependencies
 
 - Please install [csdr](https://github.com/jketterl/csdr) (version 0.18 or newer) before compiling this project.
 - (optional) If you want to work with rtlsdr devices, you will need to install the corresponding header files (on 
@@ -32,7 +38,7 @@ This means that applications using `rtl_tcp` compatibiltiy will not be able to c
 If you have compiled rtlsdr / soapy from source, you should not need to worry about this. The installation should place
 the headers in their correct locations.
 
-## Installation
+### Building
 
 This project comes with a cmake build. It is recommended to build in a separate directory.
 
