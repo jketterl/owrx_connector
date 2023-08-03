@@ -106,21 +106,22 @@ int RtlTcpConnector::send_command(struct command cmd) {
 }
 
 int RtlTcpConnector::setup() {
-    int r = Connector::setup();
-    if (r != 0) return r;
-
-    r = set_bias_tee( bias_tee);
-    if (r != 0) {
-        std::cerr << "setting biastee failed" << std::endl;
-        return 10;
-    }
-
+    int r;
     if (direct_sampling >= 0 && direct_sampling <= 2) {
         r = set_direct_sampling(direct_sampling);
         if (r != 0) {
             std::cerr << "setting direct sampling mode failed" << std::endl;
             return 11;
         }
+    }
+
+    r = Connector::setup();
+    if (r != 0) return r;
+
+    r = set_bias_tee( bias_tee);
+    if (r != 0) {
+        std::cerr << "setting biastee failed" << std::endl;
+        return 10;
     }
 
     return 0;
@@ -152,7 +153,11 @@ int RtlTcpConnector::close() {
 void RtlTcpConnector::applyChange(std::string key, std::string value) {
     int r = 0;
     if (key == "direct_sampling") {
-        direct_sampling = convertBooleanValue(value);
+        if (value == "None") {
+            direct_sampling = 0;
+        } else {
+            direct_sampling = std::stoul(value, NULL, 10);
+        }
         r = set_direct_sampling(direct_sampling);
     } else if (key == "bias_tee") {
         bias_tee = convertBooleanValue(value);
