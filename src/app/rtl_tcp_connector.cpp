@@ -210,7 +210,26 @@ int RtlTcpConnector::set_ppm(double ppm) {
 }
 
 int RtlTcpConnector::set_direct_sampling(int direct_sampling) {
-    return send_command((struct command) {0x09, htonl(direct_sampling)});
+    int r = send_command((struct command) {0x09, htonl(direct_sampling)});
+    if (r != 0) {
+        std::cerr << "setting direct sampling failed with rc = " << r << std::endl;
+        return r;
+    }
+    // switching direct sampling mode requires setting the frequency again
+    r = set_center_frequency(get_center_frequency());
+    if (r != 0) {
+        std::cerr << "setting center frequency failed with rc = " << r << std::endl;
+        return r;
+    }
+    if (direct_sampling == 0) {
+        // gain is off when switching out of direct sampling, so reset it
+        r = set_gain(get_gain());
+        if (r != 0) {
+            std::cerr << "setting gain failed with rc = " << r << std::endl;
+            return r;
+        }
+    }
+    return 0;
 }
 
 int RtlTcpConnector::set_bias_tee(bool bias_tee) {
