@@ -1,3 +1,9 @@
+owrx-connector (0.6.2) bullseye jammy; urgency=low
+
+  * New build for csdr 0.18.2
+
+ -- Jakob Ketterl <jakob.ketterl@gmx.de>  Sun, 08 Oct 2023 23:31:00 +0000
+
 owrx-connector (0.6.1) bullseye jammy; urgency=low
 
   * New build for csdr 0.18.1
