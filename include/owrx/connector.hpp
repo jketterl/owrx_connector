@@ -28,6 +28,7 @@ namespace Owrx {
             bool iqswap = false;
             int rtltcp_port = -1;
             bool run = true;
+            std::mutex devMutex;
 
             bool convertBooleanValue(std::string input);
 

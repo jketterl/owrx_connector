@@ -57,6 +57,7 @@ int RtlConnector::open() {
         return 1;
     }
 
+    std::lock_guard<std::mutex> lck(devMutex);
     rtlsdr_open(&dev, (uint32_t)dev_index);
     if (NULL == dev) {
         std::cerr << "device could not be opened" << std::endl;
@@ -129,7 +130,11 @@ void RtlConnector::callback(unsigned char* buf, uint32_t len) {
 }
 
 int RtlConnector::close() {
-    return rtlsdr_close(dev);
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
+    auto old = dev;
+    dev = nullptr;
+    return rtlsdr_close(old);
 }
 
 int RtlConnector::verbose_device_search(char const *s) {
@@ -224,14 +229,21 @@ void RtlConnector::applyChange(std::string key, std::string value) {
 }
 
 int RtlConnector::set_center_frequency(double frequency) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
     return rtlsdr_set_center_freq(dev, frequency);
 }
 
 int RtlConnector::set_sample_rate(double sample_rate) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
     return rtlsdr_set_sample_rate(dev, sample_rate);
 }
 
 int RtlConnector::set_gain(GainSpec* gain) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
+
     int r;
     if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
         r = rtlsdr_set_tuner_gain_mode(dev, 0);
@@ -265,6 +277,8 @@ int RtlConnector::set_gain(GainSpec* gain) {
 }
 
 int RtlConnector::set_ppm(double ppm) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
     // setting the same value again results in error, so check beforehand
     int corr = rtlsdr_get_freq_correction(dev);
     if (corr == ppm) {
@@ -275,11 +289,17 @@ int RtlConnector::set_ppm(double ppm) {
 
 int RtlConnector::set_direct_sampling(int new_direct_sampling) {
     int r;
-    r = rtlsdr_set_direct_sampling(dev, new_direct_sampling);
-    if (r != 0) {
-        std::cerr << "rtlsdr_set_direct_sampling() failed with rc = " << r << std::endl;
-        return r;
+
+    {
+        std::lock_guard<std::mutex> lck(devMutex);
+        if (dev == nullptr) return 0;
+        r = rtlsdr_set_direct_sampling(dev, new_direct_sampling);
+        if (r != 0) {
+            std::cerr << "rtlsdr_set_direct_sampling() failed with rc = " << r << std::endl;
+            return r;
+        }
     }
+
     // switching direct sampling mode requires setting the frequency again
     r = set_center_frequency(get_center_frequency());
     if (r != 0) {
@@ -299,6 +319,8 @@ int RtlConnector::set_direct_sampling(int new_direct_sampling) {
 
 #if HAS_RTLSDR_SET_BIAS_TEE
 int RtlConnector::set_bias_tee(bool new_bias_tee) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
     return rtlsdr_set_bias_tee(dev, (int) new_bias_tee);
 }
 #endif

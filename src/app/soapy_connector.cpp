@@ -69,6 +69,7 @@ void SoapyConnector::listDrivers() {
 
 int SoapyConnector::open() {
     try {
+        std::lock_guard<std::mutex> lck(devMutex);
         dev = SoapySDR::Device::make(device_id == nullptr ? "" : std::string(device_id));
         return 0;
     } catch (const std::exception& e) {
@@ -103,6 +104,8 @@ int SoapyConnector::setup() {
 
 int SoapyConnector::setAntenna(std::string antenna) {
     try {
+        std::lock_guard<std::mutex> lck(devMutex);
+        if (dev == nullptr) return 0;
         dev->setAntenna(SOAPY_SDR_RX, channel, antenna);
         return 0;
     } catch (const std::exception& e) {
@@ -112,6 +115,8 @@ int SoapyConnector::setAntenna(std::string antenna) {
 }
 
 int SoapyConnector::setSettings(std::string settings) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
     SoapySDR::Kwargs args = Connector::parseSettings(settings);
     for (const auto &p : args) {
         std::string key = p.first;
@@ -188,8 +193,11 @@ int SoapyConnector::read() {
 
 int SoapyConnector::close() {
     try {
-        SoapySDR::Device::unmake(dev);
+        std::lock_guard<std::mutex> lck(devMutex);
+        if (dev == nullptr) return 0;
+        auto old = dev;
         dev = nullptr;
+        SoapySDR::Device::unmake(old);
         return 0;
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
@@ -199,6 +207,8 @@ int SoapyConnector::close() {
 
 int SoapyConnector::set_center_frequency(double frequency) {
     try {
+        std::lock_guard<std::mutex> lck(devMutex);
+        if (dev == nullptr) return 0;
         dev->setFrequency(SOAPY_SDR_RX, channel, frequency);
         return 0;
     } catch (const std::exception& e) {
@@ -209,6 +219,8 @@ int SoapyConnector::set_center_frequency(double frequency) {
 
 int SoapyConnector::set_sample_rate(double sample_rate) {
     try {
+        std::lock_guard<std::mutex> lck(devMutex);
+        if (dev == nullptr) return 0;
         dev->setSampleRate(SOAPY_SDR_RX, channel, sample_rate);
         return 0;
     } catch (const std::exception& e) {
@@ -235,6 +247,8 @@ void SoapyConnector::applyChange(std::string key, std::string value) {
 }
 
 int SoapyConnector::set_gain(GainSpec* gain) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
     SimpleGainSpec* simple_gain;
     MultiGainSpec* multi_gain;
     if (dynamic_cast<AutoGainSpec*>(gain) != nullptr) {
@@ -272,6 +286,8 @@ int SoapyConnector::set_gain(GainSpec* gain) {
 };
 
 int SoapyConnector::set_ppm(double ppm) {
+    std::lock_guard<std::mutex> lck(devMutex);
+    if (dev == nullptr) return 0;
     try {
 #if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00060000)
         dev->setFrequencyCorrection(SOAPY_SDR_RX, channel, ppm);
