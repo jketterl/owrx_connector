@@ -21,6 +21,7 @@ std::stringstream SoapyConnector::get_usage_string() {
     s <<
         " -a, --antenna           select antenna input\n" <<
         " -t, --settings          set sdr specific settings\n" <<
+        " -n, --channel           select soapy channel (default 0)\n" <<
         " -l, --listdrivers       list installed SoapySDR drivers\n";
     return s;
 }
@@ -29,6 +30,7 @@ std::vector<struct option> SoapyConnector::getopt_long_options() {
     std::vector<struct option> long_options = Connector::getopt_long_options();
     long_options.push_back({"antenna", required_argument, NULL, 'a'});
     long_options.push_back({"settings", required_argument, NULL, 't'});
+    long_options.push_back({"channel", required_argument, NULL, 'n'});
     long_options.push_back({"listdrivers", no_argument, NULL, 'l'});
     return long_options;
 }
@@ -40,6 +42,9 @@ int SoapyConnector::receive_option(int c, char* optarg) {
             break;
         case 't':
             settings = std::string(optarg);
+            break;
+        case 'n':
+            channel = (size_t) std::strtoul(optarg, NULL, 10);
             break;
         case 'l':
             listDrivers();
