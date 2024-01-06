@@ -136,62 +136,69 @@ int SoapyConnector::setSettings(std::string settings) {
 }
 
 int SoapyConnector::read() {
-    std::string format = SOAPY_SDR_CS16;
-    std::vector<std::string> formats = dev->getStreamFormats(SOAPY_SDR_RX, channel);
-    // use native CF32 if available
-    if (std::find(formats.begin(), formats.end(), SOAPY_SDR_CF32) != formats.end()) {
-        format = SOAPY_SDR_CF32;
-    }
+    bool local_run = true;
 
-    void* buf = malloc(soapy_buffer_size * SoapySDR::formatToSize(format));
-    void* buffs[] = {buf};
-    int samples_read;
-    long long timeNs = 0;
-    long timeoutNs = 1E6;
-    int flags = 0;
+    while (run && local_run) {
+        channel = new_channel;
 
-    //SoapySDRKwargs stream_args = {0};
-    size_t num_channels = dev->getNumChannels(SOAPY_SDR_RX);
-    if (((size_t) channel) >= num_channels){
-        std::cerr << "Invalid channel " << channel << " selected" << std::endl;
-        return 9;
-    }
-
-    SoapySDR::Stream* stream;
-    try {
-        stream = dev->setupStream(SOAPY_SDR_RX, format, std::vector<size_t>{channel});
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        return 10;
-    }
-    dev->activateStream(stream);
-
-    while (run) {
-        samples_read = dev->readStream(stream, buffs, soapy_buffer_size, flags, timeNs, timeoutNs);
-        // std::cout << "samples read from sdr: " << samples_read << std::endl;
-
-        if (samples_read > 0) {
-            uint32_t len = samples_read * 2;
-            if (format == SOAPY_SDR_CS16) {
-                processSamples((int16_t*) buf, len);
-            } else if (format == SOAPY_SDR_CF32) {
-                processSamples((float*) buf, len);
-            }
-        } else if (samples_read == SOAPY_SDR_OVERFLOW) {
-            // overflows do happen, they are non-fatal. a warning should do
-            std::cerr << "WARNING: Soapy overflow" << std::endl;
-        } else if (samples_read == SOAPY_SDR_TIMEOUT) {
-            // timeout should not break the read loop.
-            // TODO or should they? I tried, but airspyhf devices will end up here on sample rate changes.
-            std::cerr << "WARNING: SoapySDR::Device::readStream timeout!" << std::endl;
-        } else {
-            // other errors should break the read loop.
-            std::cerr << "ERROR: Soapy error " << samples_read << std::endl;
-            break;
+        std::string format = SOAPY_SDR_CS16;
+        std::vector<std::string> formats = dev->getStreamFormats(SOAPY_SDR_RX, channel);
+        // use native CF32 if available
+        if (std::find(formats.begin(), formats.end(), SOAPY_SDR_CF32) != formats.end()) {
+            format = SOAPY_SDR_CF32;
         }
-    }
 
-    dev->deactivateStream(stream);
+        void* buf = malloc(soapy_buffer_size * SoapySDR::formatToSize(format));
+        void* buffs[] = {buf};
+        int samples_read;
+        long long timeNs = 0;
+        long timeoutNs = 1E6;
+        int flags = 0;
+
+        //SoapySDRKwargs stream_args = {0};
+        size_t num_channels = dev->getNumChannels(SOAPY_SDR_RX);
+        if (((size_t) channel) >= num_channels){
+            std::cerr << "Invalid channel " << channel << " selected" << std::endl;
+            return 9;
+        }
+
+        SoapySDR::Stream* stream;
+        try {
+            stream = dev->setupStream(SOAPY_SDR_RX, format, std::vector<size_t>{channel});
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+            return 10;
+        }
+        dev->activateStream(stream);
+
+        while (run && local_run && channel == new_channel) {
+            samples_read = dev->readStream(stream, buffs, soapy_buffer_size, flags, timeNs, timeoutNs);
+            // std::cout << "samples read from sdr: " << samples_read << std::endl;
+
+            if (samples_read > 0) {
+                uint32_t len = samples_read * 2;
+                if (format == SOAPY_SDR_CS16) {
+                    processSamples((int16_t*) buf, len);
+                } else if (format == SOAPY_SDR_CF32) {
+                    processSamples((float*) buf, len);
+                }
+            } else if (samples_read == SOAPY_SDR_OVERFLOW) {
+                // overflows do happen, they are non-fatal. a warning should do
+                std::cerr << "WARNING: Soapy overflow" << std::endl;
+            } else if (samples_read == SOAPY_SDR_TIMEOUT) {
+                // timeout should not break the read loop.
+                // TODO or should they? I tried, but airspyhf devices will end up here on sample rate changes.
+                std::cerr << "WARNING: SoapySDR::Device::readStream timeout!" << std::endl;
+            } else {
+                // other errors should break the read loop.
+                std::cerr << "ERROR: Soapy error " << samples_read << std::endl;
+                local_run = false;
+                break;
+            }
+        }
+
+        dev->deactivateStream(stream);
+    }
 
     return 0;
 };
@@ -242,6 +249,8 @@ void SoapyConnector::applyChange(std::string key, std::string value) {
     } else if (key == "settings") {
         settings = value;
         r = setSettings(settings);
+    } else if (key == "channel") {
+        new_channel = std::stoul(value, nullptr, 10);
     } else {
         Connector::applyChange(key, value);
         return;
