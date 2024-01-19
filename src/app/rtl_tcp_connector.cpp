@@ -206,7 +206,7 @@ int RtlTcpConnector::set_gain(GainSpec* gain) {
 }
 
 int RtlTcpConnector::set_ppm(double ppm) {
-    return send_command((struct command) {0x05, htonl(ppm)});
+    return send_command((struct command) {0x05, htonl((int32_t) ppm)});
 }
 
 int RtlTcpConnector::set_direct_sampling(int direct_sampling) {
