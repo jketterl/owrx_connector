@@ -9,7 +9,7 @@ Vcs-Git: https://github.com/jketterl/owrx_connector.git
 
 Package: libowrx-connector
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: libcsdr0 (>= 0.19), ${shlibs:Depends}, ${misc:Depends}
 Description: OpenWebRX connector base library
  Base library used to provide basic connector functionality
 
