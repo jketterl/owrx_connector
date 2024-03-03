@@ -139,6 +139,8 @@ int SoapyConnector::read() {
     bool local_run = true;
 
     while (run && local_run) {
+        channel = new_channel;
+
         std::string format = SOAPY_SDR_CS16;
         std::vector<std::string> formats = dev->getStreamFormats(SOAPY_SDR_RX, channel);
         // use native CF32 if available
@@ -169,7 +171,7 @@ int SoapyConnector::read() {
         }
         dev->activateStream(stream);
 
-        while (run && local_run) {
+        while (run && local_run && channel == new_channel) {
             samples_read = dev->readStream(stream, buffs, soapy_buffer_size, flags, timeNs, timeoutNs);
             // std::cout << "samples read from sdr: " << samples_read << std::endl;
 
@@ -191,12 +193,6 @@ int SoapyConnector::read() {
                 // other errors should break the read loop.
                 std::cerr << "ERROR: Soapy error " << samples_read << std::endl;
                 local_run = false;
-                break;
-            }
-
-            // change to the new channel and break the loop in case of channel change
-            if (new_channel != SIZE_MAX && channel != new_channel) {
-                channel = new_channel;
                 break;
             }
         }
