@@ -28,7 +28,7 @@ class SoapyConnector: public Connector {
         uint32_t soapy_buffer_size = SOAPY_BUFFER_SIZE;
         SoapySDR::Device* dev = nullptr;
         size_t channel = 0;
-        size_t new_channel = 0;
+        size_t new_channel = SIZE_MAX;
         std::string antenna = "";
         std::string settings = "";
 
