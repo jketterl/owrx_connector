@@ -45,6 +45,7 @@ int SoapyConnector::receive_option(int c, char* optarg) {
             break;
         case 'n':
             channel = (size_t) std::strtoul(optarg, NULL, 10);
+            new_channel = channel;
             break;
         case 'l':
             listDrivers();
